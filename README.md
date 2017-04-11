@@ -14,6 +14,12 @@ Large Scale Precipitation Tracking (LPT) is tracking of large-scale (e. g., thou
 	can be changed in the script "options.m."
 
 
+Input files are either .mat files or NetCDF (.nc).
+
+Output files are .txt, .mat, and .nc. 
+
+-------------------------------------
+
 The easiest way to run LPT is to:
 
 1) Clone this repository to your system.
@@ -31,10 +37,10 @@ The easiest way to run LPT is to:
 
 5) Run the feature identification script.
 
-   Outputs will be named "LPT_feature*.mat"
+   Outputs will be named "LPT_features*"
 
 6) Run the tracking script.
 
-   Outputs will be named "LPT_track*.mat"
+   Outputs will be named "LPT_tracks*"
 
 
