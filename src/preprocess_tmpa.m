@@ -10,6 +10,10 @@ options
 RAW_DATA_DIR = '../data/raw/tmpa';
 INTERIM_DATA_DIR = '../data/interim/gridded_rain_rates'
 
+%-----------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
+
 % NOTE: Start 3 days before DN1 to make sure a 3-day accumulation can be calculated.
 for dn = DN1-3.0:datenum(0,0,0,DT,0,0):DN2
 
