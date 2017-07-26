@@ -39,13 +39,19 @@ FILTER_NUMBER_OF_GHOST_POINTS = 10;
 %% Feature identification
 
 % Threshold value to define a feature
-% If the feature is > (<) the value, set FEATURE_IS_GT_VALUE to true (false).
+% If the feature is > (<) the threshold value, set FEATURE_IS_GT_VALUE to true (false).
 FEATURE_THRESHOLD_VALUE = 12;
 FEATURE_IS_GT_VALUE = true;
 
 % Minimum feature size is based on the numbe of points.
 % LPT features smaller than this are discarded.
-FEATURE_MINIMUM_SIZE = 4;
+% (Kerns et al. [2015] used 400 for 0.25 deg. pixels.)
+FEATURE_MINIMUM_SIZE = 400;
+
+% Max centroid latitude off the equator to identify a feature.
+% Centroid abs(lat) > FEATURE_MAX_LAT is ignored.
+% (Kerns et al. [2015] used 15.0.)
+FEATURE_MAX_LAT = 15.0;
 
 
 %% Tracking criteria
