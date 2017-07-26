@@ -9,8 +9,9 @@
 % NOTE: I have only done LPT with 0.25 deg. data. But for time intervals
 %       I have done 3 h for TRMM, 1 h for WRF ARW, and 6 h for ECMWF.
 %       Also, LON and LAT below aren't used until the spatial filter step.
-LON =  39.875 : 0.25 : 178.875;  % Set the longitude grid.
-LAT = -25.875 : 0.25 : 24.875;   % Set the latitude grid.
+DX  = 0.25; % Grid resolution
+LON =  39.875 : DX : 178.875;  % Set the longitude grid.
+LAT = -25.875 : DX : 24.875;   % Set the latitude grid.
 DN1 = datenum(2011,11,4,0,0,0);      % Set the starting time as a datenum.
 DN2 = datenum(2011,11,30,21,0,0);    % Set the ending time as a datenum.
 DT  = 3.0;                           % Set the time interval.
