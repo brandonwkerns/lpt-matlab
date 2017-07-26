@@ -24,13 +24,13 @@ fmt='%7.2f%8.2f%7.1f%7.1f%20.1f   %04d%02d%02d%02d      %7.2f%7.2f%7.1f  %7.2f\n
 
 interim_file_list = dir([INTERIM_DATA_DIR_IN,'/*.mat']);
 f0 = load([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name]);
-f9 = load([INTERIM_DATA_DIR_IN,'/',interim_file_list(end).name]);
+% f9 = load([INTERIM_DATA_DIR_IN,'/',interim_file_list(end).name]);
 AREA=zeros(1,numel(f0.lat)) ;
 for jj=1:numel(f0.lat)
     AREA(jj) = (0.25*111.195) * (0.25*111.195*cos(pi*f0.lat(jj)/180.0)) ;
 end
-dn0 = f0.time;
-dn9 = f9.time;
+dn0 = DN1;%f0.time;
+dn9 = DN2;%f9.time;
 
 [year0,month0,day0,hour0] = datevec(dn0);
 YYYY0 = sprintf('%d', year0);
@@ -53,6 +53,7 @@ eval(['!mkdir -p ',PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9]);
 % index for all of the cluster elements (CEs) in the same order
 % as the ascii file opened as "fid" above. It will go in the
 % matlab .mat file in "allPixelList."
+fout_all.time_range=[dn0,dn9];
 fout_all.time=[] ;
 fout_all.lon=[] ;
 fout_all.lat=[] ;

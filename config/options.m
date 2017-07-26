@@ -61,9 +61,13 @@ FEATURE_MAX_LAT = 15.0;
 % will be combined into a LPT track.
 TRACKING_MINIMUM_OVERLAP_FRAC = 0.5;
 TRACKING_MINIMUM_OVERLAP_POINTS = 10;
-
+TRACKING_MINIMUM_FRAMES = 2; % Minimum frames to keep a track.
+TRACKING_MAX_TIME_TO_CONNECT = 3.0; % Max time between consecutive frames to connect CEs.
+TRACKING_MAX_DIST_TO_CONNECT = 20.0; % Max distance between consecutive frames centroids.
 % How to handle splits and mergers.
 
 
 % Tracks that do not last at least this many hours will be discarded.
-TRACKING_MINIMUM_DURATION = 168;
+% NOTE: the pyhsical time scale is TRACKING_MINIMUM_DURATION + ACCUMULATION_PERIOD
+%       due to the accumulation period.
+TRACKING_MINIMUM_DURATION = 96;
