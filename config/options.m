@@ -31,10 +31,9 @@ FILTER_WIDTH = 3.0;
 % features are not truncated near the edges. Otherwise, the filter will use
 % zeros at the boundary. Ghost points use the data reflected at the
 % boundary for calculating the filter. The ghost points are discarded after
-% calculating the filter.
+% calculating the filter. This only applies to the spatial filter step.
 FILTER_USE_GHOST_POINTS = false;
 FILTER_NUMBER_OF_GHOST_POINTS = 10;
-
 
 %% Feature identification
 
@@ -45,12 +44,12 @@ FEATURE_IS_GT_VALUE = true;
 
 % Minimum feature size is based on the numbe of points.
 % LPT features smaller than this are discarded.
-% (Kerns et al. [2015] used 400 for 0.25 deg. pixels.)
+% (Kerns et al. [2016] used 400 for 0.25 deg. pixels.)
 FEATURE_MINIMUM_SIZE = 400;
 
 % Max centroid latitude off the equator to identify a feature.
 % Centroid abs(lat) > FEATURE_MAX_LAT is ignored.
-% (Kerns et al. [2015] used 15.0.)
+% (Kerns et al. [2016] used 15.0.)
 FEATURE_MAX_LAT = 15.0;
 
 
