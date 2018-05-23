@@ -1,2 +1,8 @@
 # Ignore emacs temp backup files
 *~
+
+# Ignore data
+*.nc
+*.mat
+*.txt
+
