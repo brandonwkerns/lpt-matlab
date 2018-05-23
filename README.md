@@ -31,27 +31,47 @@ src/				Matlab source code.
 
 #############################################################################################
 
-The easiest way to run LPT is to:
+Here are the steps to run LPT. Recommend doing it for TRMM 3B42 (TMPA) data first.
+
 
 1) Clone this repository to your system.
 
-   git clone brandonwkerns/lpt-matlab
+   git clone /home/orca/bkerns/lib/lpt/lpt-matlab -b master
 
-2) Edit the "options.m" file if needed.
+2) Edit the "config/options.m" or copy a template config file as needed.
+   --> The template "config/options.KC16.m" file has the options used for KC16.
+   --> The template "config/options.tmpa_new.m" file has the updated MJO LPT identification.
 
 3) get the accumulated rain data into .mat files.
 
-   Scripts are provided for dealing with TRMM 3B42 (TMPA) data and WRF model output.
-   Otherwise, use your own script. The 
+   3a) It is recommended to link the original files into the "data/raw" directory
+       so you remember where they came from.
+
+   3b) Scripts are provided for dealing with TRMM 3B42 (TMPA) data and WRF model output.
+       Otherwise, you can write your own Matlab script.
+
+       Scripts:
+       src/preprocess_tmpa.m
+       src/calc_rain_accumulation_3day.m
+
+       (Run the scripts from within the src/ directory.)
+
 
 4) Run the spatial filtering script.
 
+   Script: src/gaussSmooth.m (master)
+   Dependency: src/gaussSmoothKernel.m (function dependency--don't run this!)
+
+
 5) Run the feature identification script.
 
-   Outputs will be named "LPT_features*"
+   Script: identify_ce.m
+   --> Outputs will be named "LPT_features*"
 
-6) Run the tracking script.
+6) Run the time tracking script.
 
-   Outputs will be named "LPT_tracks*"
+   Script: run_tracking.m
+   Dependency: connect_time_clusters.m
+   --> Outputs will be named "LPT_tracks*"
 
 
