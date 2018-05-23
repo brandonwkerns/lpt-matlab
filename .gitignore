@@ -8,3 +8,7 @@
 *.HDF
 *.bin
 
+# Ignore log files.
+log.*
+*.log
+
