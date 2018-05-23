@@ -33,6 +33,8 @@ src/				Matlab source code.
 
 Here are the steps to run LPT. Recommend doing it for TRMM 3B42 (TMPA) data first.
 
+Hint for viewing multiple files at once in ncview: You may need ot set "ulimit -n 4096" or similar to see all the files at once. If the user file limit is exceeded, you will get errors like this: fi_initialize: can't properly open file ../data/interim/filtered/rain_filtered_2017110512.nc.
+
 
 1) Clone this repository to your system.
 
@@ -42,7 +44,7 @@ Here are the steps to run LPT. Recommend doing it for TRMM 3B42 (TMPA) data firs
    --> The template "config/options.KC16.m" file has the options used for KC16.
    --> The template "config/options.tmpa_new.m" file has the updated MJO LPT identification.
 
-3) get the accumulated rain data into .mat files.
+3) get the accumulated rain data files.
 
    3a) It is recommended to link the original files into a subdirectory of "data/raw" directory
        so you remember where they came from. E.g., "data/raw/tmpa" for TMPA.
@@ -51,15 +53,15 @@ Here are the steps to run LPT. Recommend doing it for TRMM 3B42 (TMPA) data firs
        Otherwise, you can write your own Matlab script.
 
        Scripts:
-       src/preprocess_tmpa.m
-       src/calc_rain_accumulation_3day.m
+       src/preprocess_tmpa.m           --> .mat files
+       src/calc_rain_accumulation.m    --> .nc files
 
        (Run the scripts from within the src/ directory.)
 
 
 4) Run the spatial filtering script.
 
-   Script: src/gaussSmooth.m (master)
+   Script: src/gaussSmooth.m (master)   --> .nc files
    Dependency: src/gaussSmoothKernel.m (function dependency--don't run this!)
 
 
