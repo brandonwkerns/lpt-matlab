@@ -44,8 +44,8 @@ Here are the steps to run LPT. Recommend doing it for TRMM 3B42 (TMPA) data firs
 
 3) get the accumulated rain data into .mat files.
 
-   3a) It is recommended to link the original files into the "data/raw" directory
-       so you remember where they came from.
+   3a) It is recommended to link the original files into a subdirectory of "data/raw" directory
+       so you remember where they came from. E.g., "data/raw/tmpa" for TMPA.
 
    3b) Scripts are provided for dealing with TRMM 3B42 (TMPA) data and WRF model output.
        Otherwise, you can write your own Matlab script.
