@@ -1,7 +1,7 @@
 # lpt-matlab
 # Brandon Kerns
 # bkerns@uw.edu
-######################################
+##############################################################################################
 
 Large Scale Precipitation Tracking (Kerns and Chen 2016, JGR) code in Matlab.
 
@@ -18,7 +18,18 @@ Input files are either .mat files or NetCDF (.nc).
 
 Output files are .txt, .mat, and .nc. 
 
--------------------------------------
+The directories are organized as follows:
+config/		    	        Configuration files.
+data/
+data/raw/			Where input .mat files are copied or linked.
+data/interim/accumulated/	The intermediate rain accumulation data.
+data/interim/filtered/		The intermediate filtered rain accumulation data.
+data/processed/features/	The processed LPT "shapshot" features.
+data/processed/tracks/		The processed LPT tracks.
+plots/				Where plots get stored.
+src/				Matlab source code.
+
+#############################################################################################
 
 The easiest way to run LPT is to:
 
