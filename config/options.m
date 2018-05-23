@@ -44,12 +44,12 @@ FEATURE_IS_GT_VALUE = true;
 
 % Minimum feature size is based on the numbe of points.
 % LPT features smaller than this are discarded.
-% (Kerns et al. [2016] used 400 for 0.25 deg. pixels.)
+% (Kerns and Chen [2016] used 400 for 0.25 deg. pixels.)
 FEATURE_MINIMUM_SIZE = 400;
 
 % Max centroid latitude off the equator to identify a feature.
 % Centroid abs(lat) > FEATURE_MAX_LAT is ignored.
-% (Kerns et al. [2016] used 15.0.)
+% (Kerns and Chen [2016] used 15.0.)
 FEATURE_MAX_LAT = 15.0;
 
 
