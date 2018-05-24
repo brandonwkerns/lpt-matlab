@@ -33,7 +33,11 @@ src/				Matlab source code.
 
 Here are the steps to run LPT. Recommend doing it for TRMM 3B42 (TMPA) data first.
 
-Hint for viewing multiple files at once in ncview: You may need ot set "ulimit -n 4096" or similar to see all the files at once. If the user file limit is exceeded, you will get errors like this: fi_initialize: can't properly open file ../data/interim/filtered/rain_filtered_2017110512.nc.
+Hint for viewing multiple files at once in ncview:
+You may need to set "ulimit -n 4096" or similar to see all the files at once.
+By default this may be set to 1024. If the user file limit is exceeded,
+you will get errors like this:
+fi_initialize: can't properly open file ../data/interim/filtered/rain_filtered_2017110512.nc.
 
 
 1) Clone this repository to your system.
