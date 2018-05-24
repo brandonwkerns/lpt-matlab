@@ -67,7 +67,7 @@ Hint for viewing multiple files at once in ncview: You may need ot set "ulimit -
 
 5) Run the feature identification script.
 
-   Script: identify_ce.m
+   Script: connect_features.m
    --> Outputs will be named "LPT_features*"
 
 6) Run the time tracking script.
