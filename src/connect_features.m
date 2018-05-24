@@ -8,7 +8,7 @@ options
 
 % This script reads in the interim files from ../data/interim/gridded_rain_rates
 % and creates accumulated rain files in ../data/interim/accumulate_rain
-INTERIM_DATA_DIR_IN = '../data/interim/filter_rain';
+INTERIM_DATA_DIR_IN = '../data/interim/filtered';
 INTERIM_DATA_DIR_UNFILTERED = '../data/interim/gridded_rain_rates';
 PROCESSED_DATA_DIR_OUT = ['../data/processed/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/ceareas'];
 
@@ -22,12 +22,17 @@ fmt='%7.2f%8.2f%7.1f%7.1f%20.1f   %04d%02d%02d%02d      %7.2f%7.2f%7.1f  %7.2f\n
 %% Calculate area arrays in km.
 %% These vary with latitude only.
 
-interim_file_list = dir([INTERIM_DATA_DIR_IN,'/*.mat']);
-f0 = load([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name]);
-% f9 = load([INTERIM_DATA_DIR_IN,'/',interim_file_list(end).name]);
+interim_file_list = dir([INTERIM_DATA_DIR_IN,'/*.nc']);
+
+% First get the "grid" from the first file.
+%f0 = load([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name]);
+f0.lon = ncread([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name],'lon');
+f0.lat = ncread([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name],'lat');
+f0.rain = ncread([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name],'rain')';
+
 AREA=zeros(1,numel(f0.lat)) ;
 for jj=1:numel(f0.lat)
-    AREA(jj) = (0.25*111.195) * (0.25*111.195*cos(pi*f0.lat(jj)/180.0)) ;
+    AREA(jj) = (DX*111.195) * (DX*111.195*cos(pi*f0.lat(jj)/180.0)) ;
 end
 dn0 = DN1;%f0.time;
 dn9 = DN2;%f9.time;
@@ -79,9 +84,12 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     hh = sprintf('%02d', hour);
 
     this_interim_file_in = [INTERIM_DATA_DIR_IN,...
-        '/rain_filtered_',yyyy,mm,dd,hh,'.mat'];
-    F=load(this_interim_file_in) ;
-
+        '/rain_filtered_',yyyy,mm,dd,hh,'.nc'];
+    %F=load(this_interim_file_in) ;
+    F.lon = ncread(this_interim_file_in, 'lon') ;
+    F.lat = ncread(this_interim_file_in, 'lat') ;
+    F.rain = ncread(this_interim_file_in, 'rain')' ;
+    
     thisPixelList=[PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9,'/ce_lpt_',yyyy,mm,dd,hh,'.mat'];
     thisCeareas=[PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9,'/ceareas_lpt_',yyyy,mm,dd,hh];
     thisFID=fopen(thisCeareas,'w') ;
