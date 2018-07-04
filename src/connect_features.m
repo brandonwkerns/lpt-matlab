@@ -74,6 +74,11 @@ fout_all.lat_rain_weighted=[] ;
 fout_all.lon_median=[] ;
 fout_all.lat_median=[] ;
 
+INDX_ALL = 0;
+begin_pixels_3d_size = 10000;
+pixels_3d = zeros(begin_pixels_3d_size, numel(LAT), numel(LON)) ;
+
+
 % Now loop over the times updating the master output struct
 % and individual time structs as needed.
 for dn = DN1:datenum(0,0,0,DT,0,0):DN2
@@ -142,6 +147,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     fout.lon_median=[] ;
     fout.lat_median=[] ;
 
+    pixels_2d = [];
+
     INDX=0 ;
 
     for iii=1:numel(stats1) ;
@@ -207,6 +214,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
             RAINFILTER_BW_keep(CC1.PixelIdxList{iii})=0;
         else
             INDX=INDX+1 ;
+            INDX_ALL=INDX_ALL+1 ;
 
             % Define the single day output struct.
             fout.time(INDX)=dn ;
@@ -224,6 +232,25 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
             fout.pixels(INDX).x=thisPixelX ;
             fout.pixels(INDX).y=thisPixelY ;
+
+            %%
+            %% Update 3D Pixel array.
+            %%
+
+            % If the pixels_3d is too small, add more space.
+            if (mod(INDX_ALL, begin_pixels_3d_size) == 0)
+              pixels_3d = [pixels_3d, zeros(begin_pixels_3d_size, numel(LAT), numel(LON))] ;
+            end
+
+            pixels_2d = zeros(numel(LAT), numel(LON));
+            for kkk = 1:numel(thisPixelX)
+              pixels_2d(thisPixelY(kkk), thisPixelX(kkk)) = 1;
+            end
+            pixels_3d(INDX_ALL,:,:) = pixels_2d;
+
+            %%
+            %% Pring out text output.
+            %%
 
             fprintf(fid,fmt, thisLat, thisLon, ...
                     centroidY, centroidX, ...
@@ -279,6 +306,8 @@ fout_all.grid.lon=LON ;
 fout_all.grid.lat=LAT ;
 fout_all.grid.area=AREA ;
 
+pixels_3d = pixels_3d(1:numel(fout_all.lon),:,:);
+
 disp(allPixelList)
 eval(['save ',allPixelList,' -struct fout_all'])
 
@@ -288,31 +317,61 @@ eval(['save ',allPixelList,' -struct fout_all'])
 % Define mode.
 % Dims
 
+disp(['Writing NetCDF: ', netcdf_output_fn])
 cmode = netcdf.getConstant('CLOBBER');
 ncid = netcdf.create(netcdf_output_fn, cmode);
-dimid_lon  = netcdf.defDim(ncid, 'lon', numel(f.lon(lonKeepIndx)));
-dimid_lat  = netcdf.defDim(ncid, 'lat', numel(f.lat(latKeepIndx)));
-dimid_time = netcdf.defDim(ncid, 'time', netcdf.getConstant('NC_UNLIMITED'));
+dimid_obs  = netcdf.defDim(ncid, 'ceid', numel(fout_all.lon));
+
+dimid_lon_grid  = netcdf.defDim(ncid, 'lon_grid', numel(fout_all.grid.lon));
+dimid_lat_grid  = netcdf.defDim(ncid, 'lat_grid', numel(fout_all.grid.lat));
+
+% Vars
+varid_ceid = netcdf.defVar(ncid, 'ceid', 'NC_INT', dimid_obs);
+varid_lon  = netcdf.defVar(ncid, 'lon', 'NC_DOUBLE', dimid_obs);
+varid_lat  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_obs);
+varid_time = netcdf.defVar(ncid, 'time', 'NC_DOUBLE', dimid_obs);
+varid_area = netcdf.defVar(ncid, 'area', 'NC_DOUBLE', dimid_obs);
+varid_volrain = netcdf.defVar(ncid, 'volrain', 'NC_DOUBLE', dimid_obs);
+
+varid_lon_grid  = netcdf.defVar(ncid, 'lon_grid', 'NC_DOUBLE', dimid_lon_grid);
+varid_lat_grid  = netcdf.defVar(ncid, 'lat_grid', 'NC_DOUBLE', dimid_lat_grid);
+varid_pixels_3d = netcdf.defVar(ncid, 'pixels', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_obs]);
+
+netcdf.endDef(ncid)
 
 
+% Data Mode
+netcdf.putVar(ncid, varid_ceid, 1:numel(fout_all.lon));
+netcdf.putVar(ncid, varid_lon, fout_all.lon);
+netcdf.putVar(ncid, varid_lat, fout_all.lat);
+netcdf.putVar(ncid, varid_time, 86400.0 * (fout_all.time - datenum(1970,1,1,0,0,0)));
+netcdf.putVar(ncid, varid_area, fout_all.area);
+netcdf.putVar(ncid, varid_volrain, fout_all.volrain);
+
+netcdf.putVar(ncid, varid_lon_grid, fout_all.grid.lon);
+netcdf.putVar(ncid, varid_lat_grid, fout_all.grid.lat);
+netcdf.putVar(ncid, varid_pixels_3d, permute(pixels_3d,[3,2,1]));
 
 
-%{
-fout_all.time_range=[dn0,dn9];
-fout_all.time=[] ;
-fout_all.lon=[] ;
-fout_all.lat=[] ;
-fout_all.area=[] ;
-fout_all.volrain=[] ;
-fout_all.pixels=[] ;
-fout_all.max_filtered_rain=[] ;
-fout_all.lon_max=[] ;
-fout_all.lat_max=[] ;
-fout_all.lon_rain_weighted=[] ;
-fout_all.lat_rain_weighted=[] ;
-fout_all.lon_median=[] ;
-fout_all.lat_median=[] ;
-%}
+netcdf.close(ncid)
+
+% Attributes
+ncwriteatt(netcdf_output_fn,'lon','units','degrees_east');
+ncwriteatt(netcdf_output_fn,'lon_grid','units','degrees_east');
+ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
+ncwriteatt(netcdf_output_fn,'lat_grid','units','degrees_north');
+
+ncwriteatt(netcdf_output_fn,'time','units','seconds since 1970-1-1 0:0:0');
+ncwriteatt(netcdf_output_fn,'area','units','km2');
+ncwriteatt(netcdf_output_fn,'area','coordinates','time lat lon');
+ncwriteatt(netcdf_output_fn,'volrain','units','mm - km2');
+ncwriteatt(netcdf_output_fn,'volrain','coordinates','time lat lon');
+
+ncwriteatt(netcdf_output_fn,'/','description', 'LPT tracking: ceareas feature snapshot file.');
+ncwriteatt(netcdf_output_fn,'/','creation_date',datestr(now));
+ncwriteatt(netcdf_output_fn,'/','smoothing',['Gaussian, ',num2str(FILTER_STANDARD_DEVIATION),...
+    ' deg std dev., extending ',num2str(FILTER_WIDTH),'X std dev.']);
+ncwriteatt(netcdf_output_fn,'/','accumulation', [num2str(ACCUMULATION_PERIOD), ' hours prior']);
 
 
 disp('Done.')
