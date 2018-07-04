@@ -51,6 +51,7 @@ HH9 = sprintf('%02d', hour9);
 
 ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
 allPixelList=[PROCESSED_DATA_DIR_OUT,'/ce_lpt_',ymd0_ymd9,'.mat'] ;
+netcdf_output_fn = [PROCESSED_DATA_DIR_OUT,'/ce_lpt_',ymd0_ymd9,'.nc'] ;
 fid=fopen([PROCESSED_DATA_DIR_OUT,'/ceareas_lpt_',ymd0_ymd9],'w') ;
 eval(['!mkdir -p ',PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9]);
 
@@ -283,6 +284,18 @@ eval(['save ',allPixelList,' -struct fout_all'])
 
 
 % NetCDF Output.
+
+% Define mode.
+% Dims
+
+cmode = netcdf.getConstant('CLOBBER');
+ncid = netcdf.create(netcdf_output_fn, cmode);
+dimid_lon  = netcdf.defDim(ncid, 'lon', numel(f.lon(lonKeepIndx)));
+dimid_lat  = netcdf.defDim(ncid, 'lat', numel(f.lat(latKeepIndx)));
+dimid_time = netcdf.defDim(ncid, 'time', netcdf.getConstant('NC_UNLIMITED'));
+
+
+
 
 %{
 fout_all.time_range=[dn0,dn9];
