@@ -292,6 +292,67 @@ fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
 eval(['save ', fileout_mat, ' -struct fout'])
 
 
+
+
+% NetCDF output.
+
+% Define mode.
+
+%% Global Stuff
+% Dims
+netcdf_output_fn=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.nc'] ;
+
+disp(['Writing NetCDF: ', netcdf_output_fn])
+cmode = netcdf.getConstant('NETCDF4');
+cmode = bitor(cmode,netcdf.getConstant('NETCDF4'));
+
+ncid = netcdf.create(netcdf_output_fn, cmode);
+dimid_lpt_id  = netcdf.defDim(ncid, 'lpt_id', numel(TIMECLUSTERS));
+dimid_lon_grid  = netcdf.defDim(ncid, 'lon_grid', numel(CE.grid.lon));
+dimid_lat_grid  = netcdf.defDim(ncid, 'lat_grid', numel(CE.grid.lat));
+
+
+% Global Vars
+varid_lpt_id = netcdf.defVar(ncid, 'lpt_id', 'NC_INT', dimid_lpt_id);
+varid_lon_grid  = netcdf.defVar(ncid, 'lon_grid', 'NC_DOUBLE', dimid_lon_grid);
+varid_lat_grid  = netcdf.defVar(ncid, 'lat_grid', 'NC_DOUBLE', dimid_lat_grid);
+
+%% Individual LPT stuff.
+
+indx = 1;
+
+childGrpID = netcdf.defGrp(ncid, ['lpt_', sprintf('%03d',indx)]);
+
+% Individual LPT dims
+dimid_obs  = netcdf.defDim(childGrpID, 'time', numel(TIMECLUSTERS(indx).time));
+
+% Individual LPT Vars
+varid_time = netcdf.defVar(childGrpID, 'time', 'NC_DOUBLE', dimid_obs);
+varid_lon  = netcdf.defVar(childGrpID, 'lon', 'NC_DOUBLE', dimid_obs);
+varid_lat  = netcdf.defVar(childGrpID, 'lat', 'NC_DOUBLE', dimid_obs);
+varid_area = netcdf.defVar(childGrpID, 'area', 'NC_DOUBLE', dimid_obs);
+varid_volrain = netcdf.defVar(childGrpID, 'volrain', 'NC_DOUBLE', dimid_obs);
+%varid_pixels_3d = netcdf.defVar(ncid, 'pixels', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_obs]);
+
+
+netcdf.endDef(ncid)
+
+% Data mode
+% global vars
+netcdf.putVar(ncid, varid_lpt_id, 1:numel(TIMECLUSTERS));
+netcdf.putVar(ncid, varid_lon_grid, CE.grid.lon);
+netcdf.putVar(ncid, varid_lat_grid, CE.grid.lat);
+
+% Individual LPT variables
+netcdf.putVar(childGrpID, varid_lon, TIMECLUSTERS(indx).lon);
+netcdf.putVar(childGrpID, varid_lat, TIMECLUSTERS(indx).lat);
+netcdf.putVar(childGrpID, varid_time, 86400.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0)));
+netcdf.putVar(childGrpID, varid_area, TIMECLUSTERS(indx).area);
+netcdf.putVar(childGrpID, varid_volrain, TIMECLUSTERS(indx).volrain);
+
+
+netcdf.close(ncid)
+
 disp('Done.')
 
 
