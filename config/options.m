@@ -1,6 +1,10 @@
 % This file contains the options and tracking criteria used for the LPT
 % tracking. Load this file at the top of each of the LPT scripts.
 
+
+CASE_LABEL = 'trmm'   % Data goes in data/case/[raw|interim|processed]
+
+
 %% Data Criteria
 
 % Rainfall data resolution (in degrees lat/lon and hours).
@@ -9,7 +13,8 @@
 % NOTE: I have only done LPT with 0.25 deg. data. But for time intervals
 %       I have done 3 h for TRMM, 1 h for WRF ARW, and 6 h for ECMWF.
 %       Also, LON and LAT below aren't used until the spatial filter step.
-DX  = 0.25; % Grid resolution
+USE_NATIVE_GRID = false;
+DX  =  0.25; % Grid resolution
 LON =  39.875 : DX : 178.875;  % Set the longitude grid.
 LAT = -25.875 : DX : 24.875;   % Set the latitude grid.
 DN1 = datenum(2017,7,1,0,0,0);      % Set the starting time as a datenum.
