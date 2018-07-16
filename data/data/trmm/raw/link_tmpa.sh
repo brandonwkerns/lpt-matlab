@@ -17,12 +17,12 @@ rm -f *.HDF
 # Link Files
 for MM in 06 07 08 09 10 11 12
 do
-    ln -s $data_dir/$year1/$MM/*/*.HDF .
+    ln -sv $data_dir/$year1/$MM/*/*.HDF .
 done
 
 for MM in 01 02 03 04 05 06
 do
-    ln -s $data_dir/$year2/$MM/*/*.HDF .
+    ln -sv $data_dir/$year2/$MM/*/*.HDF .
 done
 
 
