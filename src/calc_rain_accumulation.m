@@ -9,7 +9,8 @@ options
 % This script reads in the interim files from ../data/interim/gridded_rain_rates
 % and creates accumulated rain files in ../data/interim/accumulate_rain
 INTERIM_DATA_DIR_IN = ['../data/',CASE_LABEL,'/interim/gridded_rain_rates'];
-INTERIM_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/interim/accumulated'];
+INTERIM_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/interim/accumulated/',...
+  sprintf('%d',ACCUMULATION_PERIOD), 'h'];
 
 %-----------------------------------------------------------------------------
 %-----------------------------------------------------------------------------
@@ -26,7 +27,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
     RAINCOLLECT = [] ;
     this_interim_file_out = [INTERIM_DATA_DIR_OUT,...
-        '/rain_accumulated_',YYYY,MM,DD,HH,'.nc'];
+        '/rain_accumulated_',sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
 
     kkk=0 ;
     for hour_rel=-1*ACCUMULATION_PERIOD:DT:0
@@ -42,7 +43,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
         HH0 = sprintf('%02d', hour0);
 
         this_interim_file_in = [INTERIM_DATA_DIR_IN,...
-            '/gridded_rain_rates_',YYYY0,MM0,DD0,HH0,'.mat'];
+            '/gridded_rain_rates_',YYYY0,MM0,DD0,HH0,'.nc'];
 
         if ( ~ exist(this_interim_file_in) )
             disp(['WARNING: Did not find ',this_interim_file_in])
@@ -51,7 +52,10 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
         end
 
         disp(this_interim_file_in)
-        f = load(this_interim_file_in);
+        %f = load(this_interim_file_in);
+        f.lon = ncread(this_interim_file_in,'lon');
+        f.lat = ncread(this_interim_file_in,'lat');
+        f.rain = ncread(this_interim_file_in,'rain')';
 
         THISRAIN = f.rain ;
         THISRAIN(THISRAIN < -0.01) = NaN;
@@ -63,6 +67,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     RAINAVG=nanmean(RAINCOLLECT,3)*24.0; % units: mm/h --> mm/day
 
     %% NetCDF output.
+    eval(['!mkdir -p ',INTERIM_DATA_DIR_OUT])
 
     % Define mode.
     % Dims
@@ -96,5 +101,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     ncwriteatt(this_interim_file_out,'/','accumulation', [num2str(ACCUMULATION_PERIOD), ' hours prior']);
 
 end
+
+disp(['Interim accumulated rain files written to: ',INTERIM_DATA_DIR_OUT])
 
 disp('Done.')
