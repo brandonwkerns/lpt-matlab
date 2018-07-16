@@ -1,7 +1,7 @@
 % This file contains the options and tracking criteria used for the LPT
 % tracking. Load this file at the top of each of the LPT scripts.
 
-CASE_LABEL = 'trmm'   % Data goes in data/case/[raw|interim|processed]
+CASE_LABEL = 'trmm';   % Data goes in data/case/[raw|interim|processed]
 
 %%
 %% Data Criteria
