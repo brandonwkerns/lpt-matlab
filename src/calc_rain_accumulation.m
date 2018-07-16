@@ -8,8 +8,8 @@ options
 
 % This script reads in the interim files from ../data/interim/gridded_rain_rates
 % and creates accumulated rain files in ../data/interim/accumulate_rain
-INTERIM_DATA_DIR_IN = '../data/interim/gridded_rain_rates';
-INTERIM_DATA_DIR_OUT = '../data/interim/accumulated';
+INTERIM_DATA_DIR_IN = ['../data/',CASE_LABEL,'/interim/gridded_rain_rates'];
+INTERIM_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/interim/accumulated'];
 
 %-----------------------------------------------------------------------------
 %-----------------------------------------------------------------------------
@@ -62,19 +62,6 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     disp(['--> ',this_interim_file_out])
     RAINAVG=nanmean(RAINCOLLECT,3)*24.0; % units: mm/h --> mm/day
 
-    %{
-    fout.lon=f.lon;
-    fout.lat=f.lat;
-    fout.time=dn;
-    fout.rain=RAINAVG;
-    fout.info.smoothing='NO SMOOTHING';
-    fout.info.accumulation='3 days prior';
-    fout.info.units='mm/day';
-
-    eval(['save ',this_interim_file_out,' -struct fout'])
-    eval(['!mkdir -p ',INTERIM_DATA_DIR_OUT]) ;
-    %}
-
     %% NetCDF output.
 
     % Define mode.
@@ -91,7 +78,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     varid_rain = netcdf.defVar(ncid, 'rain', 'NC_DOUBLE', [dimid_lon dimid_lat dimid_time]);
     %netcdf.putAtt(ncid,varid_time,'units','seconds since 1970-1-1 0:0:0');
     %netcdf.putAtt(ncid,varid_rain,'units','mm day-1');
-    
+
     netcdf.endDef(ncid)
 
     % Data Mode
@@ -99,15 +86,15 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     netcdf.putVar(ncid, varid_lat, f.lat);
     netcdf.putVar(ncid, varid_time, 86400.0 * (dn - datenum(1970,1,1,0,0,0)));
     netcdf.putVar(ncid, varid_rain, RAINAVG');
-    
+
     netcdf.close(ncid)
-    
+
     ncwriteatt(this_interim_file_out,'time','units','seconds since 1970-1-1 0:0:0');
     ncwriteatt(this_interim_file_out,'rain','units','mm day-1');
     ncwriteatt(this_interim_file_out,'/','creation_date',datestr(now));
     ncwriteatt(this_interim_file_out,'/','smoothing','none');
     ncwriteatt(this_interim_file_out,'/','accumulation', [num2str(ACCUMULATION_PERIOD), ' hours prior']);
-    
+
 end
 
 disp('Done.')
