@@ -8,8 +8,8 @@ options
 
 % This script reads in the interim files from ../data/interim/gridded_rain_rates
 % and creates accumulated rain files in ../data/interim/accumulate_rain
-INTERIM_DATA_DIR_IN = '../data/interim/accumulated';
-INTERIM_DATA_DIR_OUT = '../data/interim/filtered';
+INTERIM_DATA_DIR_IN = ['../data/',CASE_LABEL,'/interim/accumulated'];
+INTERIM_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/interim/filtered'];
 
 %-----------------------------------------------------------------------------
 %-----------------------------------------------------------------------------
