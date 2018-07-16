@@ -63,8 +63,6 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     varid_lat  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_lat);
     varid_time = netcdf.defVar(ncid, 'time', 'NC_DOUBLE', dimid_time);
     varid_rain = netcdf.defVar(ncid, 'rain', 'NC_DOUBLE', [dimid_lon dimid_lat dimid_time]);
-    %netcdf.putAtt(ncid,varid_time,'units','seconds since 1970-1-1 0:0:0');
-    %netcdf.putAtt(ncid,varid_rain,'units','mm day-1');
 
     netcdf.endDef(ncid)
 
