@@ -12,3 +12,6 @@
 log.*
 *.log
 
+# Ignore edited config file.
+config/options.m
+
