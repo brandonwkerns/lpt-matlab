@@ -11,7 +11,7 @@ options
 INTERIM_DATA_DIR_IN = ['../data/',CASE_LABEL,'/interim/accumulated/',...
                         sprintf('%d',ACCUMULATION_PERIOD), 'h'];
 INTERIM_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/interim/filtered/',...
-                        sprintf('%d',ACCUMULATION_PERIOD), 'h'];
+                        'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                         sprintf('%d',ACCUMULATION_PERIOD), 'h'];
 
 %-----------------------------------------------------------------------------
@@ -28,10 +28,13 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
   HH = sprintf('%02d', hour);
 
   this_interim_file_in = [INTERIM_DATA_DIR_IN,...
-      '/rain_accumulated_',YYYY,MM,DD,HH,'.nc'];
+      '/rain_accumulated_',...
+      sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
 
   this_interim_file_out = [INTERIM_DATA_DIR_OUT,...
-      '/rain_filtered_',YYYY,MM,DD,HH,'.nc'];
+      '/rain_filtered_',...
+      'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
+      sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
 
   disp([this_interim_file_in, ' --> ', this_interim_file_out])
 
@@ -59,6 +62,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
                           FILTER_USE_GHOST_POINTS) ;
   RAINFILTER = RAINFILTER';
   %% NetCDF output.
+  eval(['!mkdir -p ',INTERIM_DATA_DIR_OUT])
 
   % Define mode.
   % Dims
@@ -78,8 +82,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
   netcdf.endDef(ncid)
 
   % Data Mode
-  netcdf.putVar(ncid, varid_lon, f.lon(lonKeepIndx));
-  netcdf.putVar(ncid, varid_lat, f.lat(latKeepIndx));
+  netcdf.putVar(ncid, varid_lon, f.lon);
+  netcdf.putVar(ncid, varid_lat, f.lat);
   netcdf.putVar(ncid, varid_time, 0,1, 86400.0 * (dn - datenum(1970,1,1,0,0,0)));
   netcdf.putVar(ncid, varid_rain, RAINFILTER);
 
@@ -92,4 +96,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
       ' deg std dev., extending ',num2str(FILTER_WIDTH),'X std dev.']);
   ncwriteatt(this_interim_file_out,'/','accumulation', [num2str(ACCUMULATION_PERIOD), ' hours prior']);
 
-end
+end %End for loop.
+
+disp(['Interim accumulated rain files written to: ',INTERIM_DATA_DIR_OUT])
+
+disp('Done.')
