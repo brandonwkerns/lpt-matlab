@@ -8,9 +8,14 @@ options
 
 % This script reads in the interim files from ../data/interim/gridded_rain_rates
 % and creates accumulated rain files in ../data/interim/accumulate_rain
-INTERIM_DATA_DIR_IN = '../data/interim/filtered';
-INTERIM_DATA_DIR_UNFILTERED = '../data/interim/gridded_rain_rates';
-PROCESSED_DATA_DIR_OUT = ['../data/processed/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/ceareas'];
+INTERIM_DATA_DIR_IN = ['../data/',CASE_LABEL,'/interim/filtered/',...
+                        'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
+                        sprintf('%d',ACCUMULATION_PERIOD), 'h'];
+INTERIM_DATA_DIR_UNFILTERED = ['../data/',CASE_LABEL,'/interim/gridded_rain_rates'];
+PROCESSED_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/processed/',...
+                        'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
+                        sprintf('%d',ACCUMULATION_PERIOD), ...
+                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/ceareas'];
 
 %-----------------------------------------------------------------------------
 %-----------------------------------------------------------------------------
@@ -313,6 +318,7 @@ eval(['save ',allPixelList,' -struct fout_all'])
 
 
 % NetCDF Output.
+eval(['!mkdir -p ',PROCESSED_DATA_DIR_OUT])
 
 % Define mode.
 % Dims
