@@ -46,6 +46,7 @@ FILTER_WIDTH = 3.0;
 % calculating the filter. This only applies to the spatial filter step.
 % The number of ghost points is the FILTER_WIDTH in the x direction only.
 FILTER_USE_GHOST_POINTS = false;
+FILTER_CYCLICAL_GHOST_POINTS = false;
 
 %%
 %% Feature identification
