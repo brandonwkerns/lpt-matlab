@@ -44,8 +44,8 @@ FILTER_WIDTH = 3.0;
 % zeros at the boundary. Ghost points use the data reflected at the
 % boundary for calculating the filter. The ghost points are discarded after
 % calculating the filter. This only applies to the spatial filter step.
+% The number of ghost points is the FILTER_WIDTH in the x direction only.
 FILTER_USE_GHOST_POINTS = false;
-FILTER_NUMBER_OF_GHOST_POINTS = 10;
 
 %%
 %% Feature identification
