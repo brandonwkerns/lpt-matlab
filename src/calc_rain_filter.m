@@ -58,7 +58,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
   filter_nx = floor(2.0 * FILTER_WIDTH * FILTER_STANDARD_DEVIATION) + 1;
   filter_std_points = FILTER_STANDARD_DEVIATION;
 
-  RAINFILTER=gaussSmooth(f.rain,filter_nx,filter_nx,filter_std_points,filter_std_points,...
+  RAINFILTER=gaussSmooth(f.rain,filter_std_points,filter_std_points,filter_nx,filter_nx,...
                           FILTER_USE_GHOST_POINTS, FILTER_CYCLICAL_GHOST_POINTS) ;
   RAINFILTER = RAINFILTER';
   %% NetCDF output.

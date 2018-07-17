@@ -24,7 +24,7 @@ function dataSmooth = gaussSmooth(data, stdx, stdy, nx, ny, ghost_points, cyclic
 %  kernel out to 3 stdev's.
 
 %% Manage optional args with default values.
-
+[J,I] = size(data);
 if ( nargin < 5 )
   nx = round(6*stdx + 1);
   ny = round(6*stdy + 1);
@@ -48,13 +48,14 @@ if ( nargin < 7 )
   cyclical = false;
 end
 
-if ghost_points
-  if cyclical
-    data_with_ghost_points = [data(:,end-nx,end), data, data(:,1:nx)];
+if ghost_points == true
+  if cyclical == true
+    data_with_ghost_points = [data(:,I-nx:I), data, data(:,1:nx)];
   else
-    data_with_ghost_points = [fliplr(data(:,1:nx)), data, fliplr(data(:,end-nx,end))];
+    data_with_ghost_points = [fliplr(data(:,1:nx)), data, fliplr(data(:,I-nx:I))];
   end
-  dataSmooth=conv2(data_with_ghost_points, kernel, 'same') ;
+  dataSmooth0=conv2(data_with_ghost_points, kernel, 'same') ;
+  dataSmooth = dataSmooth0(:,nx+1:end-(nx+1));
 else
   dataSmooth=conv2(data, kernel, 'same') ;
 end
