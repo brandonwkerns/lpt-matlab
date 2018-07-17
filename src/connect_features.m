@@ -95,8 +95,10 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     hh = sprintf('%02d', hour);
 
     this_interim_file_in = [INTERIM_DATA_DIR_IN,...
-        '/rain_filtered_',yyyy,mm,dd,hh,'.nc'];
-    %F=load(this_interim_file_in) ;
+        '/rain_filtered_',...
+        'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
+        sprintf('%d',ACCUMULATION_PERIOD), 'h_',yyyy,mm,dd,hh,'.nc'];
+
     F.lon = ncread(this_interim_file_in, 'lon') ;
     F.lat = ncread(this_interim_file_in, 'lat') ;
     F.rain = ncread(this_interim_file_in, 'rain')' ;
@@ -106,7 +108,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     thisFID=fopen(thisCeareas,'w') ;
 
     fileRain_Unfiltered=[INTERIM_DATA_DIR_UNFILTERED, ...
-                        '/gridded_rain_rates_',yyyy,mm,dd,hh,'.mat'] ;
+                        '/gridded_rain_rates_',yyyy,mm,dd,hh,'.nc'] ;
     Funfiltered=load(fileRain_Unfiltered) ;
 
     RAINFILTER=F.rain ;
