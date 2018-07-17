@@ -81,7 +81,7 @@ fout_all.lat_median=[] ;
 
 INDX_ALL = 0;
 begin_pixels_3d_size = 10000;
-pixels_3d = zeros(begin_pixels_3d_size, numel(LAT), numel(LON)) ;
+pixels_3d = zeros(begin_pixels_3d_size, numel(f0.lat), numel(f0.lon)) ;
 
 
 % Now loop over the times updating the master output struct
@@ -109,7 +109,13 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
     fileRain_Unfiltered=[INTERIM_DATA_DIR_UNFILTERED, ...
                         '/gridded_rain_rates_',yyyy,mm,dd,hh,'.nc'] ;
-    Funfiltered=load(fileRain_Unfiltered) ;
+    %Funfiltered=load(fileRain_Unfiltered) ;
+    Funfiltered.lon = ncread(fileRain_Unfiltered, 'lon');
+    Funfiltered.lat = ncread(fileRain_Unfiltered, 'lat');
+    Funfiltered.rain = ncread(fileRain_Unfiltered, 'rain');
+    Funfiltered.rain = Funfiltered.rain';
+
+    %TODO: This needs to do area_conserve_remap if custom grid is selected.
 
     RAINFILTER=F.rain ;
     RAINFILTER_BW=logical(0.0*RAINFILTER) ;
@@ -120,15 +126,15 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     end
     RAINFILTER_BW(~isfinite(RAINFILTER)) = 0 ;
 
-    keepLat=find(F.lat > LAT(1)-0.01 & F.lat < LAT(end)+0.01 ) ;
-    keepLon=find(F.lon > LON(1)-0.01 & F.lon < LON(end)+0.01 ) ;
-    RAINFILTER_keep=RAINFILTER(keepLat,keepLon ) ;
-    RAINFILTER_BW_keep=RAINFILTER_BW( keepLat, keepLon ) ;
+    %keepLat=find(F.lat > LAT(1)-0.01 & F.lat < LAT(end)+0.01 ) ;
+    %keepLon=find(F.lon > LON(1)-0.01 & F.lon < LON(end)+0.01 ) ;
+    RAINFILTER_keep=RAINFILTER;%(keepLat,keepLon ) ;
+    RAINFILTER_BW_keep=RAINFILTER_BW;%( keepLat, keepLon ) ;
 
     RAINUNFILTERED=Funfiltered.rain ;
-    keepLat=find(Funfiltered.lat > LAT(1)-0.01 & Funfiltered.lat < LAT(end)+0.01 ) ;
-    keepLon=find(Funfiltered.lon > LON(1)-0.01 & Funfiltered.lon < LON(end)+0.01 ) ;
-    RAINUNFILTERED_keep=RAINUNFILTERED( keepLat, keepLon ) ;
+    %keepLat=find(Funfiltered.lat > LAT(1)-0.01 & Funfiltered.lat < LAT(end)+0.01 ) ;
+    %keepLon=find(Funfiltered.lon > LON(1)-0.01 & Funfiltered.lon < LON(end)+0.01 ) ;
+    RAINUNFILTERED_keep=RAINUNFILTERED; %( keepLat, keepLon ) ;
     RAINUNFILTERED_keep(~isfinite(RAINUNFILTERED_keep))=0.0 ;
 
     % Initialize some stuff.
@@ -202,8 +208,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
         max_filtered_rain_X=thisPixelX(max_filtered_rain_index);
         max_filtered_rain_Y=thisPixelY(max_filtered_rain_index);
-        max_filtered_rain_lon=LON(max_filtered_rain_X);
-        max_filtered_rain_lat=LAT(max_filtered_rain_Y);
+        max_filtered_rain_lon=F.lon(max_filtered_rain_X);
+        max_filtered_rain_lat=F.lat(max_filtered_rain_Y);
 
         % Rainfall weighted center of mass.
         rain_weighted_X=sum( filtered_rain_list*thisPixelX) / ...
@@ -212,8 +218,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
         rain_weighted_Y=sum( filtered_rain_list*thisPixelY) / ...
             sum(filtered_rain_list) ;
 
-        rain_weighted_lon=interp1(1:numel(LON),LON,rain_weighted_X) ;
-        rain_weighted_lat=interp1(1:numel(LAT),LAT,rain_weighted_Y) ;
+        rain_weighted_lon=interp1(1:numel(F.lon),F.lon,rain_weighted_X) ;
+        rain_weighted_lat=interp1(1:numel(F.lat),F.lat,rain_weighted_Y) ;
 
         %% Apply the "ce" area and centroid latitude criteria here
 
@@ -246,10 +252,10 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
             % If the pixels_3d is too small, add more space.
             if (mod(INDX_ALL, begin_pixels_3d_size) == 0)
-              pixels_3d = [pixels_3d, zeros(begin_pixels_3d_size, numel(LAT), numel(LON))] ;
+              pixels_3d = [pixels_3d, zeros(begin_pixels_3d_size, numel(F.lat), numel(F.lon))] ;
             end
 
-            pixels_2d = zeros(numel(LAT), numel(LON));
+            pixels_2d = zeros(numel(F.lat), numel(F.lon));
             for kkk = 1:numel(thisPixelX)
               pixels_2d(thisPixelY(kkk), thisPixelX(kkk)) = 1;
             end
@@ -298,9 +304,13 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     fout_all.lon_median=[fout_all.lon_median,fout.lon_median] ;
     fout_all.lat_median=[fout_all.lat_median,fout.lat_median] ;
 
-
-    fout.grid.lon=LON ;
-    fout.grid.lat=LAT ;
+    %if USE_NATIVE_GRID == false
+  %    fout.grid.lon=LON ;
+%      fout.grid.lat=LAT ;
+%    else
+      fout.grid.lon = F.lon;
+      fout.grid.lat = F.lat;
+%    end
     fout.grid.area=AREA ;
 
     disp(thisPixelList)
@@ -309,8 +319,14 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 end
 
 fclose(fid) ;
-fout_all.grid.lon=LON ;
-fout_all.grid.lat=LAT ;
+%if USE_NATIVE_GRID == false
+%  fout_all.grid.lon=LON ;
+%  fout_all.grid.lat=LAT ;
+%else
+  fout_all.grid.lon = F.lon;
+  fout_all.grid.lat = F.lat;
+%end
+
 fout_all.grid.area=AREA ;
 
 pixels_3d = pixels_3d(1:numel(fout_all.lon),:,:);
