@@ -33,20 +33,28 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
   disp([this_interim_file_in, ' --> ', this_interim_file_out])
 
   %f = load(this_interim_file_in) ;
-  f.lon = ncread(this_interim_file_in, 'lon');
-  f.lat = ncread(this_interim_file_in, 'lat');
-  f.rain = ncread(this_interim_file_in, 'rain')';
+  f0.lon = ncread(this_interim_file_in, 'lon');
+  f0.lat = ncread(this_interim_file_in, 'lat');
+  f0.rain = ncread(this_interim_file_in, 'rain')';
 
   %This gets used for the subsetting by LON and LAT from options.m
-  lonKeepIndx=find(f.lon > LON(1)-0.01 & f.lon < LON(end)+0.01) ;
-  latKeepIndx=find(f.lat > LAT(1)-0.01 & f.lat < LAT(end)+0.01) ;
+  %lonKeepIndx=find(f.lon > LON(1)-0.01 & f.lon < LON(end)+0.01) ;
+  %latKeepIndx=find(f.lat > LAT(1)-0.01 & f.lat < LAT(end)+0.01) ;
+  if USE_NATIVE_GRID == false
+    f.lon = LON;
+    f.lat = LAT;
+    f.rain = conservative_interp2(f0.lon,f0.lat,f0.rain,f.lon,f.lat);
+  else
+    f = f0;
+  end
 
   %Generate the filter criteria.
   filter_nx = floor(2.0 * FILTER_WIDTH * FILTER_STANDARD_DEVIATION) + 1;
   filter_std_points = FILTER_STANDARD_DEVIATION;
 
-  RAINFILTER=gaussSmooth(f.rain,filter_nx,filter_nx,filter_std_points,filter_std_points) ;
-
+  RAINFILTER=gaussSmooth(f.rain,filter_nx,filter_nx,filter_std_points,filter_std_points,...
+                          FILTER_USE_GHOST_POINTS) ;
+  RAINFILTER = RAINFILTER';
   %% NetCDF output.
 
   % Define mode.
@@ -54,8 +62,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
   cmode = netcdf.getConstant('CLOBBER');
   %cmode = bitor(cmode, netcdf.getConstant('64BIT_OFFSET'));
   ncid = netcdf.create(this_interim_file_out, cmode);
-  dimid_lon  = netcdf.defDim(ncid, 'lon', numel(f.lon(lonKeepIndx)));
-  dimid_lat  = netcdf.defDim(ncid, 'lat', numel(f.lat(latKeepIndx)));
+  dimid_lon  = netcdf.defDim(ncid, 'lon', numel(f.lon));
+  dimid_lat  = netcdf.defDim(ncid, 'lat', numel(f.lat));
   dimid_time = netcdf.defDim(ncid, 'time', netcdf.getConstant('NC_UNLIMITED'));
 
   % Vars
@@ -70,7 +78,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
   netcdf.putVar(ncid, varid_lon, f.lon(lonKeepIndx));
   netcdf.putVar(ncid, varid_lat, f.lat(latKeepIndx));
   netcdf.putVar(ncid, varid_time, 0,1, 86400.0 * (dn - datenum(1970,1,1,0,0,0)));
-  netcdf.putVar(ncid, varid_rain, RAINFILTER(latKeepIndx,lonKeepIndx)');
+  netcdf.putVar(ncid, varid_rain, RAINFILTER);
 
   netcdf.close(ncid)
 
