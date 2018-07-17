@@ -43,7 +43,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
   if USE_NATIVE_GRID == false
     f.lon = LON;
     f.lat = LAT;
-    f.rain = conservative_interp2(f0.lon,f0.lat,f0.rain,f.lon,f.lat);
+    f.rain = area_conserve_remap(f0.lon,f0.lat,f0.rain,f.lon,f.lat);
   else
     f = f0;
   end
