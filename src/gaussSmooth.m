@@ -28,7 +28,7 @@ function dataSmooth = gaussSmooth(data, stdx, stdy, nx, ny, ghost_points)
 if ( nargin < 5 )
   nx = round(6*stdx + 1);
   ny = round(6*stdy + 1);
-else
+end
 
 nx = round(nx);
 ny = round(ny);
