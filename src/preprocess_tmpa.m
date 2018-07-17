@@ -40,7 +40,13 @@ for dn = DN1-ACCUMULATION_PERIOD/24.0:datenum(0,0,0,DT,0,0):DN2
 
   if (exist(this_raw_file))
     F = read3b42(this_raw_file);
-    this_rain = F.precip ;
+
+    %% Longitude 0 - 360
+    F.lon = [F.lon(721:1440), 360.0 + F.lon(1:720)];
+    F.precip = [F.precip(:,721:1440), F.precip(:,1:720)];
+
+
+    this_rain = F.precip' ;
     this_rain(this_rain < -0.01) = NaN ;
 
     disp(this_raw_file) ;
@@ -69,7 +75,7 @@ for dn = DN1-ACCUMULATION_PERIOD/24.0:datenum(0,0,0,DT,0,0):DN2
     netcdf.putVar(ncid, varid_lon, F.lon);
     netcdf.putVar(ncid, varid_lat, F.lat);
     netcdf.putVar(ncid, varid_time, 0,1, 86400.0 * (datenum(year,month,day,hour,0,0) - datenum(1970,1,1,0,0,0)));
-    netcdf.putVar(ncid, varid_rain, this_rain');
+    netcdf.putVar(ncid, varid_rain, this_rain);
 
     netcdf.close(ncid)
 
