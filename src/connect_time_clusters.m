@@ -59,7 +59,7 @@ DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 %%    These need to be re-merged.
 %% -- Splits will have the splitting branches as the same TC.
 %%
-for dn=[DN(1:24)]
+for dn=[DN]
 
     ceINDXthisTime=find(CE.time == dn) ;
     if ( numel(ceINDXthisTime) < 1 )
@@ -206,11 +206,16 @@ splitDuplicateTCs() ;
 %%
 
 removeShortLivedTCs(minDuration) ;
+
+%%
+%% Some TCs were close enough to be considered a single track. Allow "center jumps".
+%%
 combineCloseProximityTCs(10.0,3.0) ;
 
 %%
 %% Get tracking parameters from the CE database
 %%
+
 
 disp('Calculating tracking parameters.')
 calcTrackingParameters() ;
@@ -282,12 +287,13 @@ eval(['save ', fileout_mat, ' -struct fout'])
 
 
 % NetCDF output.
+
 %%
 %% Global Stuff
 %%
 
 % Get "stitch" track data.
-MISSING = -9999.0
+MISSING = -9999.0;
 stitch_id = MISSING;
 stitch_lon = MISSING;
 stitch_lat = MISSING;
@@ -821,7 +827,7 @@ function removeShortLivedTCs(minduration) ;
 end
 
 
-function combineCloseProximityTCs(maxCombineLonDiff,maxCombineTimeDiff) ;
+function combineCloseProximityTCs(maxCombineDist,maxCombineTimeDiff) ;
 
     TC_eliminate_list=[];
 
@@ -839,9 +845,13 @@ function combineCloseProximityTCs(maxCombineLonDiff,maxCombineTimeDiff) ;
             jumpLon=CE.lon(TIMECLUSTERS(ii).ceid(1)) - ...
                     CE.lon(TIMECLUSTERS(ii_before).ceid(end));
 
+            jumpLat=CE.lat(TIMECLUSTERS(ii).ceid(1)) - ...
+                    CE.lat(TIMECLUSTERS(ii_before).ceid(end));
+
+            jumpDist = sqrt(jumpLon^2 + jumpLat^2);
 
             if ( abs(jumpTime) < maxCombineTimeDiff+0.01 & ...
-                 abs(jumpLon) < maxCombineLonDiff+0.01 )
+                 abs(jumpDist) < maxCombineDist+0.01 )
 
                 TIMECLUSTERS(ii).ceid=sort([TIMECLUSTERS(ii).ceid,...
                                     TIMECLUSTERS(ii_before).ceid]);
@@ -1063,7 +1073,7 @@ maskArrays.all.mask_by_id_with_filter_and_accumulation = -1+zeros(numel(DN), num
 maskArrays.individual = [];
 
 for indx = 1:numel(TIMECLUSTERS)
-
+  disp(['  ', num2str(indx), ' of ', num2str(numel(TIMECLUSTERS))])
   this_mask_array.mask_by_id = -1+zeros(numel(TIMECLUSTERS(indx).time), numel(CE.grid.lat), numel(CE.grid.lon));
   this_mask_array.mask_by_id_with_filter = -1+zeros(numel(TIMECLUSTERS(indx).time), numel(CE.grid.lat), numel(CE.grid.lon));
 
@@ -1079,6 +1089,11 @@ for indx = 1:numel(TIMECLUSTERS)
       for iiii = 1:numel(ce.pixels.x)
 
         % Single point masks. These are easy.
+        % TIMECLUSTERS(indx)
+        % disp(['iii = ',num2str(iii)])
+        % disp(TIMECLUSTERS(indx).ceid(iii))
+        % ce.pixels
+        % ce.pixels.x(iiii)
         this_mask_array.mask_by_id(iii, ce.pixels.y(iiii), ce.pixels.x(iiii)) = TIMECLUSTERS(indx).ceid(iii);
         maskArrays.all.mask_by_id(tindx, ce.pixels.y(iiii), ce.pixels.x(iiii)) = indx;
         maskArrays.all.mask_by_id_with_accumulation(tindx2, ce.pixels.y(iiii), ce.pixels.x(iiii)) = indx;
@@ -1099,11 +1114,13 @@ end  % for
 % Filter width masks: expand out from single point masks.
 
 % Filter width masks.
-maskArrays.all.mask_by_id_with_filter = ...
-    feature_spread(maskArrays.all.mask_by_id, np);
-
-maskArrays.all.mask_by_id_with_filter_and_accumulation = ...
-    feature_spread(maskArrays.all.mask_by_id_with_accumulation, np);
+% disp('  Feature spread on all file. (This may take awhile.)')
+% maskArrays.all.mask_by_id_with_filter = ...
+%     feature_spread(maskArrays.all.mask_by_id, np);
+%
+% maskArrays.all.mask_by_id_with_filter_and_accumulation = ...
+%     feature_spread(maskArrays.all.mask_by_id_with_accumulation, np);
+disp('  Feature spread on all file turned off.')
 
 end  % function
 
