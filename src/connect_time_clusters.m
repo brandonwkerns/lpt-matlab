@@ -59,7 +59,7 @@ DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 %%    These need to be re-merged.
 %% -- Splits will have the splitting branches as the same TC.
 %%
-for dn=[DN]
+for dn=[DN(1:24)]
 
     ceINDXthisTime=find(CE.time == dn) ;
     if ( numel(ceINDXthisTime) < 1 )
@@ -900,17 +900,12 @@ function calcTrackingParameters() ;
         TIMECLUSTERS(iiii).duration=24*(max(thisTCtimeList)-min(thisTCtimeList)) ;
         TIMECLUSTERS(iiii).nentries=numel(thisTCtimeListUniq) ;
 
-
         for tttt=1:numel(thisTCtimeListUniq) ;
 
-
             thisTimeMatch=find(thisTCtimeList == thisTCtimeListUniq(tttt));
-
             thisTimeCEID=TIMECLUSTERS(iiii).ceid(thisTimeMatch);
 
-
             % The CEs at each time. TC.ce(tttt).ceid, ect.x
-
             TIMECLUSTERS(iiii).ce(tttt).ceid=thisTimeCEID ;
             TIMECLUSTERS(iiii).ce(tttt).time=CE.time(thisTimeCEID) ;
             TIMECLUSTERS(iiii).ce(tttt).lon=CE.lon(thisTimeCEID) ;
@@ -940,16 +935,13 @@ function calcTrackingParameters() ;
                 sum(CE.lat_median(thisTimeCEID).*CE.area(thisTimeCEID))/...
                 sum(CE.area(thisTimeCEID));
 
-
             TIMECLUSTERS(iiii).area(tttt)=sum(CE.area(thisTimeCEID));
             TIMECLUSTERS(iiii).size(tttt)=sqrt(TIMECLUSTERS(iiii).area(tttt));
             TIMECLUSTERS(iiii).effective_radius(tttt)=...
                 sqrt(TIMECLUSTERS(iiii).area(tttt)/pi);
 
             TIMECLUSTERS(iiii).volrain(tttt)=sum(CE.volrain(thisTimeCEID));
-
             TIMECLUSTERS(iiii).nclusters(tttt)=numel(thisTimeMatch);
-
 
             % The "Max Area" tracks.
             [MA,MaxAreaI]=max(TIMECLUSTERS(iiii).ce(tttt).area) ;
@@ -972,8 +964,6 @@ function calcTrackingParameters() ;
                 CE.lon_max(thisTimeCEID(MaxAreaI));
             TIMECLUSTERS(iiii).max_area_track.lat_max(tttt)=...
                 CE.lat_max(thisTimeCEID(MaxAreaI));
-
-
 
             % The "Max Volrain" tracks.
             [MA,MaxVolrainI]=max(TIMECLUSTERS(iiii).ce(tttt).volrain) ;
@@ -1036,7 +1026,7 @@ function calcTrackingParameters() ;
             max(abs(TIMECLUSTERS(iiii).lat));
 
         %% Zonal and meridional propagation speed.
-        [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lon,1) ;
+        [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lon,1);
         TIMECLUSTERS(iiii).zonal_propagation_speed = ...
             (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
 
@@ -1044,38 +1034,9 @@ function calcTrackingParameters() ;
         TIMECLUSTERS(iiii).meridional_propagation_speed = ...
             (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
 
-
         b=robustfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lon) ;
         TIMECLUSTERS(iiii).zonal_propagation_speed_robust_fit = ...
             (b(2)) * 111000.0/(24.0*3600.0) ;
-
-
-        if ( TIMECLUSTERS(iiii).zonal_propagation_speed > 0 )
-
-            [min_lon,min_lon_indx]=min(TIMECLUSTERS(iiii).lon) ;
-            [max_lon,max_lon_indx]=max(TIMECLUSTERS(iiii).lon(min_lon_indx+1:end)) ;
-
-            [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time(min_lon_indx:min_lon_indx+max_lon_indx),...
-                                TIMECLUSTERS(iiii).lon(min_lon_indx:min_lon_indx+max_lon_indx),1) ;
-
-            TIMECLUSTERS(iiii).zonal_eastward_propagation_speed = ...
-                (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
-
-
-        else
-
-            TIMECLUSTERS(iiii).zonal_eastward_propagation_speed = NaN ;
-
-        end
-
-        keepLat=find(TIMECLUSTERS(iiii).lat > -8.0 & ...
-                     TIMECLUSTERS(iiii).lat < 8.0 ) ;
-
-        [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time(keepLat),...
-                            TIMECLUSTERS(iiii).lon(keepLat),1) ;
-        TIMECLUSTERS(iiii).zonal_propagation_speed_8s8n = ...
-            (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
-
 
     end
 
