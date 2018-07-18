@@ -59,7 +59,7 @@ DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 %%    These need to be re-merged.
 %% -- Splits will have the splitting branches as the same TC.
 %%
-for dn=[DN(1:24)]
+for dn=[DN]
 
     ceINDXthisTime=find(CE.time == dn) ;
     if ( numel(ceINDXthisTime) < 1 )
