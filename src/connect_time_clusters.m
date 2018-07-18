@@ -853,8 +853,8 @@ function combineCloseProximityTCs(maxCombineDist,maxCombineTimeDiff) ;
             if ( abs(jumpTime) < maxCombineTimeDiff+0.01 & ...
                  abs(jumpDist) < maxCombineDist+0.01 )
 
-                TIMECLUSTERS(ii).ceid=sort([TIMECLUSTERS(ii).ceid,...
-                                    TIMECLUSTERS(ii_before).ceid]);
+                TIMECLUSTERS(ii).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
+                                    TIMECLUSTERS(ii_before).ceid]));
 
                 disp(['Combined LPTs: ',num2str(ii_before),' in to ',...
                       num2str(ii),'.'])
@@ -1066,9 +1066,9 @@ function maskArrays = calcMaskArrays(TIMECLUSTERS, CE, DN, OPT) %FILTER_STANDARD
 %   to calculate 3-D (lat/lon/time) mask arrays.
 
 
-np = round(OPT.FILTER_STANDARD_DEVIATION / OPT.DX);
-grid_nx = numel(OPT.LON);
-grid_ny = numel(OPT.LAT);
+np = round(OPT.FILTER_STANDARD_DEVIATION);
+grid_nx = numel(CE.grid.lon);
+grid_ny = numel(CE.grid.lat);
 
 maskArrays.all.mask_by_id = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
 maskArrays.all.mask_by_id_with_filter = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
@@ -1089,19 +1089,16 @@ for indx = 1:numel(TIMECLUSTERS)
     tindx2 = find(DN > TIMECLUSTERS(indx).time(iii) - 0.0001 - OPT.ACCUMULATION_PERIOD / 24.0 & ...
       DN < TIMECLUSTERS(indx).time(iii) + 0.0001);
 
-    for ce = TIMECLUSTERS(indx).ce(iii);
-      for iiii = 1:numel(ce.pixels.x)
+    %TIMECLUSTERS(indx).ce(iii)
+    for ce = [TIMECLUSTERS(indx).ce(iii)];
+      for cccc = 1:numel(ce.pixels)  %Sometimes more than one CE per time.
+        for iiii = 1:numel(ce.pixels(cccc).x)
 
-        % Single point masks. These are easy.
-        % TIMECLUSTERS(indx)
-        % disp(['iii = ',num2str(iii)])
-        % disp(TIMECLUSTERS(indx).ceid(iii))
-        % ce.pixels
-        % ce.pixels.x(iiii)
-        this_mask_array.mask_by_id(iii, ce.pixels.y(iiii), ce.pixels.x(iiii)) = TIMECLUSTERS(indx).ceid(iii);
-        maskArrays.all.mask_by_id(tindx, ce.pixels.y(iiii), ce.pixels.x(iiii)) = indx;
-        maskArrays.all.mask_by_id_with_accumulation(tindx2, ce.pixels.y(iiii), ce.pixels.x(iiii)) = indx;
+          this_mask_array.mask_by_id(iii, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = ce.ceid(cccc);%TIMECLUSTERS(indx).ceid(iii);
+          maskArrays.all.mask_by_id(tindx, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = indx;
+          maskArrays.all.mask_by_id_with_accumulation(tindx2, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = indx;
 
+        end
       end
     end % for loop over CEs for this LPT
 
