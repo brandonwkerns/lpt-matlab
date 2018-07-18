@@ -49,3 +49,4 @@ connect_time_clusters(allPixelList, OPT) ;
 eval(['!mkdir -p ',PROCESSED_DATA_DIR_OUT])
 eval(['!mv LONGSTATS_lpt_',ymd0_ymd9,' ',PROCESSED_DATA_DIR_OUT])
 eval(['!mv TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat ',PROCESSED_DATA_DIR_OUT])
+eval(['!mv TIMECLUSTERS_lpt_*.nc ',PROCESSED_DATA_DIR_OUT])
