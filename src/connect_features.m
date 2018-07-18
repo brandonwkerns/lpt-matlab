@@ -168,8 +168,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
         centroidY=stats1(iii).Centroid(2) ;
         centroidX=stats1(iii).Centroid(1) ;
-        thisLon=interp1(1:numel(LON),LON,centroidX) ;
-        thisLat=interp1(1:numel(LAT),LAT,centroidY) ;
+        thisLon=interp1(1:numel(f0.lon),f0.lon,centroidX) ;
+        thisLat=interp1(1:numel(f0.lat),f0.lat,centroidY) ;
 
         % CE area
         thisArea=0.0 ;
@@ -195,8 +195,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
         medianX=median(thisPixelX);
         medianY=median(thisPixelY);
 
-        thisLonMedian=interp1(1:numel(LON),LON,medianX) ;
-        thisLatMedian=interp1(1:numel(LAT),LAT,medianY) ;
+        thisLonMedian=interp1(1:numel(f0.lon),f0.lon,medianX) ;
+        thisLatMedian=interp1(1:numel(f0.lon),f0.lon,medianY) ;
 
         % Center of the MAX filtered rainfall.
         filtered_rain_list=[];
@@ -252,7 +252,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
             % If the pixels_3d is too small, add more space.
             if (mod(INDX_ALL, begin_pixels_3d_size) == 0)
-              pixels_3d = [pixels_3d, zeros(begin_pixels_3d_size, numel(F.lat), numel(F.lon))] ;
+              pixels_3d = cat(1, pixels_3d, zeros(begin_pixels_3d_size, numel(F.lat), numel(F.lon))) ;
             end
 
             pixels_2d = zeros(numel(F.lat), numel(F.lon));
