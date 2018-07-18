@@ -30,7 +30,6 @@ fmt='%7.2f%8.2f%7.1f%7.1f%20.1f   %04d%02d%02d%02d      %7.2f%7.2f%7.1f  %7.2f\n
 interim_file_list = dir([INTERIM_DATA_DIR_IN,'/*.nc']);
 
 % First get the "grid" from the first file.
-%f0 = load([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name]);
 f0.lon = ncread([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name],'lon');
 f0.lat = ncread([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name],'lat');
 f0.rain = ncread([INTERIM_DATA_DIR_IN,'/',interim_file_list(1).name],'rain')';
@@ -109,7 +108,6 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
     fileRain_Unfiltered=[INTERIM_DATA_DIR_UNFILTERED, ...
                         '/gridded_rain_rates_',yyyy,mm,dd,hh,'.nc'] ;
-    %Funfiltered=load(fileRain_Unfiltered) ;
     Funfiltered.lon = ncread(fileRain_Unfiltered, 'lon');
     Funfiltered.lat = ncread(fileRain_Unfiltered, 'lat');
     Funfiltered.rain = ncread(fileRain_Unfiltered, 'rain');
@@ -126,15 +124,11 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     end
     RAINFILTER_BW(~isfinite(RAINFILTER)) = 0 ;
 
-    %keepLat=find(F.lat > LAT(1)-0.01 & F.lat < LAT(end)+0.01 ) ;
-    %keepLon=find(F.lon > LON(1)-0.01 & F.lon < LON(end)+0.01 ) ;
-    RAINFILTER_keep=RAINFILTER;%(keepLat,keepLon ) ;
-    RAINFILTER_BW_keep=RAINFILTER_BW;%( keepLat, keepLon ) ;
+    RAINFILTER_keep=RAINFILTER;
+    RAINFILTER_BW_keep=RAINFILTER_BW;
 
     RAINUNFILTERED=Funfiltered.rain ;
-    %keepLat=find(Funfiltered.lat > LAT(1)-0.01 & Funfiltered.lat < LAT(end)+0.01 ) ;
-    %keepLon=find(Funfiltered.lon > LON(1)-0.01 & Funfiltered.lon < LON(end)+0.01 ) ;
-    RAINUNFILTERED_keep=RAINUNFILTERED; %( keepLat, keepLon ) ;
+    RAINUNFILTERED_keep=RAINUNFILTERED;
     RAINUNFILTERED_keep(~isfinite(RAINUNFILTERED_keep))=0.0 ;
 
     % Initialize some stuff.
@@ -304,13 +298,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     fout_all.lon_median=[fout_all.lon_median,fout.lon_median] ;
     fout_all.lat_median=[fout_all.lat_median,fout.lat_median] ;
 
-    %if USE_NATIVE_GRID == false
-  %    fout.grid.lon=LON ;
-%      fout.grid.lat=LAT ;
-%    else
-      fout.grid.lon = F.lon;
-      fout.grid.lat = F.lat;
-%    end
+    fout.grid.lon = F.lon;
+    fout.grid.lat = F.lat;
     fout.grid.area=AREA ;
 
     disp(thisPixelList)
@@ -319,13 +308,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 end
 
 fclose(fid) ;
-%if USE_NATIVE_GRID == false
-%  fout_all.grid.lon=LON ;
-%  fout_all.grid.lat=LAT ;
-%else
-  fout_all.grid.lon = F.lon;
-  fout_all.grid.lat = F.lat;
-%end
+fout_all.grid.lon = F.lon;
+fout_all.grid.lat = F.lat;
 
 fout_all.grid.area=AREA ;
 
