@@ -59,7 +59,7 @@ DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 %%    These need to be re-merged.
 %% -- Splits will have the splitting branches as the same TC.
 %%
-for dn=[DN]
+for dn=[DN(1:24)]
 
     ceINDXthisTime=find(CE.time == dn) ;
     if ( numel(ceINDXthisTime) < 1 )
@@ -1033,10 +1033,6 @@ function calcTrackingParameters() ;
         [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lat,1) ;
         TIMECLUSTERS(iiii).meridional_propagation_speed = ...
             (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
-
-        b=robustfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lon) ;
-        TIMECLUSTERS(iiii).zonal_propagation_speed_robust_fit = ...
-            (b(2)) * 111000.0/(24.0*3600.0) ;
 
     end
 
