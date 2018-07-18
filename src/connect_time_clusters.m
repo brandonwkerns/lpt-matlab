@@ -1036,14 +1036,18 @@ function calcTrackingParameters() ;
             max(abs(TIMECLUSTERS(iiii).lat));
 
         %% Zonal and meridional propagation speed.
-        [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lon,1);
-        TIMECLUSTERS(iiii).zonal_propagation_speed = ...
-            (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
+        if numel(TIMECLUSTERS(iiii).lon) > 1
+          [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lon,1);
+          TIMECLUSTERS(iiii).zonal_propagation_speed = ...
+              (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
 
-        [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lat,1) ;
-        TIMECLUSTERS(iiii).meridional_propagation_speed = ...
-            (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
-
+          [FIT0,S,MU]=polyfit(TIMECLUSTERS(iiii).time,TIMECLUSTERS(iiii).lat,1) ;
+          TIMECLUSTERS(iiii).meridional_propagation_speed = ...
+              (FIT0(1)) * 111000.0/(24.0*3600.0*MU(2)) ;
+        else
+          TIMECLUSTERS(iiii).zonal_propagation_speed = NaN;
+          TIMECLUSTERS(iiii).meridional_propagation_speed = NaN;
+        end
     end
 
 end
