@@ -79,7 +79,7 @@ fout_all.lon_median=[] ;
 fout_all.lat_median=[] ;
 
 INDX_ALL = 0;
-begin_pixels_3d_size = 10000;
+begin_pixels_3d_size = 20000;
 pixels_3d = zeros(begin_pixels_3d_size, numel(f0.lat), numel(f0.lon)) ;
 
 
@@ -352,7 +352,7 @@ netcdf.endDef(ncid)
 netcdf.putVar(ncid, varid_ceid, 1:numel(fout_all.lon));
 netcdf.putVar(ncid, varid_lon, fout_all.lon);
 netcdf.putVar(ncid, varid_lat, fout_all.lat);
-netcdf.putVar(ncid, varid_time, 86400.0 * (fout_all.time - datenum(1970,1,1,0,0,0)));
+netcdf.putVar(ncid, varid_time, 24.0 * (fout_all.time - datenum(1970,1,1,0,0,0)));
 netcdf.putVar(ncid, varid_area, fout_all.area);
 netcdf.putVar(ncid, varid_volrain, fout_all.volrain);
 
@@ -369,7 +369,7 @@ ncwriteatt(netcdf_output_fn,'lon_grid','units','degrees_east');
 ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
 ncwriteatt(netcdf_output_fn,'lat_grid','units','degrees_north');
 
-ncwriteatt(netcdf_output_fn,'time','units','seconds since 1970-1-1 0:0:0');
+ncwriteatt(netcdf_output_fn,'time','units','hours since 1970-1-1 0:0:0');
 ncwriteatt(netcdf_output_fn,'area','units','km2');
 ncwriteatt(netcdf_output_fn,'area','coordinates','time lat lon');
 ncwriteatt(netcdf_output_fn,'volrain','units','mm - km2');
