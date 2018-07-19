@@ -43,7 +43,7 @@ HH9 = sprintf('%02d', hour9);
 ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
 allPixelList=[PROCESSED_DATA_DIR_IN,'/ce_lpt_',ymd0_ymd9,'.mat'] ;
 
-connect_time_clusters(allPixelList, OPT) ;
+connect_time_clusters(allPixelList, OPT, TRACKING_VERBOSE) ;
 
 % Move to output directory.
 eval(['!mkdir -p ',PROCESSED_DATA_DIR_OUT])

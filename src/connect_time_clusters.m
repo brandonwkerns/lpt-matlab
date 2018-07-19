@@ -34,7 +34,7 @@ maxDistToConnect = OPT.TRACKING_MAX_DIST_TO_CONNECT ;%20.0 %; %Max. distance bet
 
 
 if ( nargin < 3 )
-    verbose=0 ;
+  verbose=0 ;
 end
 
 disp(master_ce_file)
@@ -61,145 +61,130 @@ DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 %%
 for dn=[DN]
 
-    ceINDXthisTime=find(CE.time == dn) ;
-    if ( numel(ceINDXthisTime) < 1 )
-        continue
-    end
+  ceINDXthisTime=find(CE.time == dn) ;
+  if ( numel(ceINDXthisTime) < 1 )
+    continue
+  end
 
-    if (numel(allDates) > 0.1)
-        prevDate=max(allDates(allDates < dn-0.01 ) ) ;
-    else
-        prevDate=datenum(1900,1,1,0,0,0) ;
-    end
+  if (numel(allDates) > 0.1)
+    prevDates=allDates(allDates > dn - 0.01 - OPT.TRACKING_MAX_TIME_TO_CONNECT/24.0 & ...
+                        allDates < dn-0.01 ) ;
+  else
+    prevDates=[datenum(1900,1,1,0,0,0)] ;
+  end
 
-    % If there is a gap longer than maxTimeToConnect,
-    %  force all of this time's clusters to be new tracks.
-    if ( 24*(dn - prevDate) > maxTimeToConnect+0.1 )
-            prevDate=datenum(1900,1,1,0,0,0) ;
-    end
+  % If there is a gap longer than maxTimeToConnect,
+  %  force all of this time's clusters to be new tracks.
+  %if ( 24*(dn - prevDate) > maxTimeToConnect+0.1 )
+%          prevDate=datenum(1900,1,1,0,0,0) ;
+  %end
 
-    % Get a set of matching time clusters for each
-    %  cluster feature present at this time.
+  % Get a set of matching time clusters for each
+  %  cluster feature present at this time.
 
-    for thisCE=ceINDXthisTime  % Loop over the cluster features
-                                 % present at this time.
+  for thisCE=ceINDXthisTime  % Loop over the cluster features
+                               % present at this time.
 
-        istr=num2str(thisCE) ;
+    istr=num2str(thisCE) ;
 
-        matchingClusterID=matchingTimeCluster(thisCE,prevDate);
-
-
-        if ( numel( matchingClusterID ) <  1   )
-
-
-            % This is a new cluster.
+    for prevDate = prevDates
+      matchingClusterID=matchingTimeCluster(thisCE,prevDate);
 
 
-            if ( verbose > 0 )
-                disp([istr,': No matching time cluster in the database.'])
-            end
+      if ( numel( matchingClusterID ) <  1   )
 
-
-            % Starting new cloud cluster.
-            startNewTimeCluster(nextClusterID) ;
-            if ( verbose > 0 )
-                disp(['        + Created new time cluster: ID = ',num2str(nextClusterID)])
-            end
-
-
-            addCluster(nextClusterID,thisCE) ;
-
-            nextClusterID = nextClusterID + 1 ;
-
-        else
-
-            if ( verbose > 0 )
-                disp([istr,': Matches with current existing cluster id = ',num2str(matchingClusterID)])
-            end
-
-
-
-
-            %
-            % This will create duplicate tracks when there are more than one
-            %  matchingClusterID's. To fix this, use below either
-            %  mergeDuplicateTCs() or splitDuplicateTCs().
-            %
-            %{
-            for iii=1:numel(matchingClusterID)
-                addCluster(matchingClusterID(iii),thisCE) ;
-            end
-            %}
-
-            % Use this version instead to avoid splitting tracks.
-            %  Only have the timecluster track follow the largest CE.
-            for iii=1:numel(matchingClusterID)
-                % Is there already a CE assigned to the matchingClusterID?
-                findMatchingTime=find(CE.time(TIMECLUSTERS(matchingClusterID(iii)).ceid) == dn) ;
-
-                if ( numel(findMatchingTime)==0)
-                    addCluster(matchingClusterID(iii),thisCE) ;
-                else
-                    %findMatchingTime
-                    %TIMECLUSTERS(matchingClusterID(iii)).ceid(findMatchingTime)
-
-                    matchingArea=CE.area(TIMECLUSTERS(matchingClusterID(iii)).ceid(findMatchingTime));
-
-                    %[matchingArea,CE.area(thisCE)]
-
-                    if ( CE.area(thisCE) > matchingArea  )
-
-                        startNewTimeCluster(nextClusterID) ;
-                        if ( verbose > 0 )
-                            disp(['        + Created new time cluster: ID = ',num2str(nextClusterID)])
-                        end
-
-                        addCluster(nextClusterID,TIMECLUSTERS(matchingClusterID(iii)).ceid(findMatchingTime)) ;
-                        nextClusterID = nextClusterID + 1 ;
-                        TIMECLUSTERS(matchingClusterID(iii)).ceid(findMatchingTime)=thisCE;
-
-                    else
-
-                        startNewTimeCluster(nextClusterID) ;
-                        if ( verbose > 0 )
-                            disp(['        + Created new time cluster: ID = ',num2str(nextClusterID)])
-                        end
-
-                        addCluster(nextClusterID,thisCE) ;
-                        nextClusterID = nextClusterID + 1 ;
-
-                    end
-
-                end
-            end
-
-            % End of the version of code to avoid split tracks.
-
-
+        % This is a new cluster.
+        if ( verbose > 0 )
+          disp([istr,': No matching time cluster in the database.'])
         end
 
-    end   % END Loop over the cluster features
-          % present at this time.
+        % Starting new cloud cluster.
+        startNewTimeCluster(nextClusterID) ;
+        if ( verbose > 0 )
+          disp(['        + Created new time cluster: ID = ',num2str(nextClusterID)])
+        end
 
-    % Update the list of clusters.
-    allDates=unique([allDates,dn]) ;
+        addCluster(nextClusterID,thisCE) ;
+        nextClusterID = nextClusterID + 1 ;
 
+      else
+
+        if ( verbose > 0 )
+          disp([istr,': Matches with current existing cluster id = ',num2str(matchingClusterID)])
+        end
+
+        %
+        % This will create duplicate tracks when there are more than one
+        %  matchingClusterID's. To fix this, use below either
+        %  mergeDuplicateTCs() or splitDuplicateTCs().
+        %
+        %{
+        for iii=1:numel(matchingClusterID)
+            addCluster(matchingClusterID(iii),thisCE) ;
+        end
+        %}
+
+        % Use this version instead to avoid splitting tracks.
+        %  Only have the timecluster track follow the largest CE.
+        for iii=1:numel(matchingClusterID)
+          % Is there already a CE assigned to the matchingClusterID?
+          findMatchingTime=find(CE.time(TIMECLUSTERS(matchingClusterID(iii)).ceid) == dn) ;
+
+          if ( numel(findMatchingTime)==0)
+            addCluster(matchingClusterID(iii),thisCE) ;
+          else
+            %findMatchingTime
+            %TIMECLUSTERS(matchingClusterID(iii)).ceid(findMatchingTime)
+
+            matchingArea=CE.area(TIMECLUSTERS(matchingClusterID(iii)).ceid(findMatchingTime));
+
+            %[matchingArea,CE.area(thisCE)]
+
+            if ( CE.area(thisCE) > matchingArea  )
+
+              startNewTimeCluster(nextClusterID) ;
+              if ( verbose > 0 )
+                disp(['        + Created new time cluster: ID = ',num2str(nextClusterID)])
+              end
+
+              addCluster(nextClusterID,TIMECLUSTERS(matchingClusterID(iii)).ceid(findMatchingTime)) ;
+              nextClusterID = nextClusterID + 1 ;
+              TIMECLUSTERS(matchingClusterID(iii)).ceid(findMatchingTime)=thisCE;
+
+            else
+
+              startNewTimeCluster(nextClusterID) ;
+              if ( verbose > 0 )
+                disp(['        + Created new time cluster: ID = ',num2str(nextClusterID)])
+              end
+
+              addCluster(nextClusterID,thisCE) ;
+              nextClusterID = nextClusterID + 1 ;
+
+            end
+
+          end
+        end
+
+        % End of the version of code to avoid split tracks.
+
+      end
+    end
+
+  end   % END Loop over the cluster features
+        % present at this time.
+
+  % Update the list of clusters.
+  allDates=unique([allDates,dn]) ;
 
 end % END Loop over Dates
-
-
-
-
 
 %%
 %% Now combining the merging tracks which were duplicates.
 %%
 
-
 %mergeDuplicateTCs() ;
 splitDuplicateTCs() ;
-
-
 
 %%
 %% Take out time clusters with insufficient duration.
@@ -210,12 +195,11 @@ removeShortLivedTCs(minDuration) ;
 %%
 %% Some TCs were close enough to be considered a single track. Allow "center jumps".
 %%
-combineCloseProximityTCs(10.0,3.0) ;
+%combineCloseProximityTCs_by_centroid(10.0,3.0) ;
 
 %%
 %% Get tracking parameters from the CE database
 %%
-
 
 disp('Calculating tracking parameters.')
 calcTrackingParameters() ;
@@ -323,7 +307,7 @@ cmode = bitor(cmode,netcdf.getConstant('NETCDF4'));
 ncid = netcdf.create(netcdf_output_fn, cmode);
 
 dimid_lpt_id  = netcdf.defDim(ncid, 'lpt_id', numel(TIMECLUSTERS));
-dimid_time  = netcdf.defDim(ncid, 'time', numel(DN));
+dimid_alltime  = netcdf.defDim(ncid, 'alltime', numel(DN));
 dimid_lon_grid  = netcdf.defDim(ncid, 'lon', numel(CE.grid.lon));
 dimid_lat_grid  = netcdf.defDim(ncid, 'lat', numel(CE.grid.lat));
 dimid_obs  = netcdf.defDim(ncid, 'obs', numel(stitch_lon));
@@ -333,7 +317,7 @@ dimid_obs  = netcdf.defDim(ncid, 'obs', numel(stitch_lon));
 % Coordinates
 varid_lpt_id = netcdf.defVar(ncid, 'lpt_id', 'NC_INT', dimid_lpt_id);
 varid_obs = netcdf.defVar(ncid, 'obs', 'NC_INT', dimid_obs);
-varid_time = netcdf.defVar(ncid, 'alltime', 'NC_DOUBLE', dimid_time);
+varid_alltime = netcdf.defVar(ncid, 'alltime', 'NC_DOUBLE', dimid_alltime);
 varid_end_time = netcdf.defVar(ncid, 'end_of_accumulation_alltime', 'NC_DOUBLE', dimid_time);
 varid_lon_grid  = netcdf.defVar(ncid, 'lon', 'NC_DOUBLE', dimid_lon_grid);
 varid_lat_grid  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_lat_grid);
@@ -368,10 +352,10 @@ netcdf.defVarFill(ncid,varid_stitch_effective_radius,false,MISSING);
 netcdf.defVarFill(ncid,varid_stitch_volrain,false,MISSING);
 
 % Mask
-varid_lpt_mask_by_id  = netcdf.defVar(ncid, 'mask_by_id', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_time]);
-varid_lpt_mask_by_id_with_accumulation  = netcdf.defVar(ncid, 'mask_with_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_time]);
-varid_lpt_mask_by_id_with_filter  = netcdf.defVar(ncid, 'mask_with_filter', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_time]);
-varid_lpt_mask_by_id_with_filter_and_accumulation  = netcdf.defVar(ncid, 'mask_with_filter_and_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_time]);
+varid_lpt_mask_by_id  = netcdf.defVar(ncid, 'mask_by_id', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
+varid_lpt_mask_by_id_with_accumulation  = netcdf.defVar(ncid, 'mask_with_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
+varid_lpt_mask_by_id_with_filter  = netcdf.defVar(ncid, 'mask_with_filter', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
+varid_lpt_mask_by_id_with_filter_and_accumulation  = netcdf.defVar(ncid, 'mask_with_filter_and_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
 netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id,true,true,1);
 netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter,true,true,1);
 netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_accumulation,true,true,1);
@@ -400,7 +384,7 @@ end
 % Data mode
 % Coordinates
 netcdf.putVar(ncid, varid_lpt_id, 1:numel(TIMECLUSTERS));
-netcdf.putVar(ncid, varid_time, 86400.0 * (DN - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
+netcdf.putVar(ncid, varid_alltime, 86400.0 * (DN - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
 netcdf.putVar(ncid, varid_end_time, 86400.0 * (DN - datenum(1970,1,1,0,0,0)));
 netcdf.putVar(ncid, varid_lon_grid, CE.grid.lon);
 netcdf.putVar(ncid, varid_lat_grid, CE.grid.lat);
@@ -417,8 +401,8 @@ netcdf.putVar(ncid, varid_lpt_meridional_propagation_speed, meridional_propagati
 
 % stitched data
 netcdf.putVar(ncid, varid_stitch_id, stitch_id);
-netcdf.putVar(ncid, varid_stitch_time, 86400.0 * (stitch_time - datenum(1970,1,1,0,0,0)));
-netcdf.putVar(ncid, varid_stitch_end_time, 86400.0 * (stitch_time - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
+netcdf.putVar(ncid, varid_stitch_time, 86400.0 * (stitch_time - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
+netcdf.putVar(ncid, varid_stitch_end_time, 86400.0 * (stitch_time - datenum(1970,1,1,0,0,0)));
 netcdf.putVar(ncid, varid_stitch_lon, stitch_lon);
 netcdf.putVar(ncid, varid_stitch_lat, stitch_lat);
 netcdf.putVar(ncid, varid_stitch_area, stitch_area);
@@ -566,17 +550,12 @@ disp('Done.')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-
 function startNewTimeCluster(tcid)
-
-    TIMECLUSTERS(tcid).ceid = [] ;
-
+  TIMECLUSTERS(tcid).ceid = [] ;
 end
 
 
 function addCluster(tcid,ceid)
-
 %
 % tcid = index of TIMECLUSTERS struct array to use.
 % pixels = "pixels" struct for this time
@@ -584,9 +563,7 @@ function addCluster(tcid,ceid)
 %
 % Modifies global function variable TIMECLUSTERS
 %
-
-    TIMECLUSTERS(tcid).ceid=[TIMECLUSTERS(tcid).ceid,ceid];
-
+  TIMECLUSTERS(tcid).ceid=[TIMECLUSTERS(tcid).ceid,ceid];
 end
 
 
@@ -594,66 +571,63 @@ end
 
 function  matchingClusterID=matchingTimeCluster(theCE,timeToSearch);
 
-    matchingClusterID=[] ;
+  matchingClusterID=[] ;
 
-    if ( numel(TIMECLUSTERS) < 1 )
-        return
-    else
-
-
-        %% Loop through previous time clusters, looking for a match.
-
-        for ii=1:numel(TIMECLUSTERS)
+  if ( numel(TIMECLUSTERS) < 1 )
+    return
+  else
 
 
-            times=[] ;
+    %% Loop through previous time clusters, looking for a match.
 
-            for  jj=[TIMECLUSTERS(ii).ceid]
-
-                %% Check distance here.
-                dLON1=CE.lon(jj)-CE.lon(theCE) ;
-                dLAT1=CE.lat(jj)-CE.lat(theCE) ;
-
-                if ( sqrt(dLON1.^2 + dLAT1.^2 ) > maxDistToConnect )
-                    continue
-                end
+    for ii=1:numel(TIMECLUSTERS)
 
 
-                if (CE.time(jj) == timeToSearch)
+      times=[] ;
 
-                    X1=CE.pixels(jj).x ;
-                    Y1=CE.pixels(jj).y ;
+      for  jj=[TIMECLUSTERS(ii).ceid]
 
-                    X2=CE.pixels(theCE).x ;
-                    Y2=CE.pixels(theCE).y ;
+        %% Check distance here.
+        dLON1=CE.lon(jj)-CE.lon(theCE) ;
+        dLAT1=CE.lat(jj)-CE.lat(theCE) ;
 
-                    hits=[] ;
-
-                    A=[X1,Y1] ;
-                    B=[X2,Y2] ;
-
-
-                    HITS=intersect(A,B,'rows') ;
-                    nHits=size(HITS,1);
-                    %nHits=numel(HITS)
+        if ( sqrt(dLON1.^2 + dLAT1.^2 ) > maxDistToConnect )
+          continue
+        end
 
 
-                    if ( nHits/numel(X1) > 0.75 | ...
-                         nHits/numel(X2) > 0.75 | ...
-                         nHits > 1600  )
-                        %% 10 deg.^2 = 1600 pixels
+        if (CE.time(jj) == timeToSearch)
 
-                        matchingClusterID=[matchingClusterID,ii] ;
+          X1=CE.pixels(jj).x ;
+          Y1=CE.pixels(jj).y ;
 
-                    end
+          X2=CE.pixels(theCE).x ;
+          Y2=CE.pixels(theCE).y ;
 
-                end
+          hits=[] ;
 
-            end
+          A=[X1,Y1] ;
+          B=[X2,Y2] ;
+
+
+          HITS=intersect(A,B,'rows') ;
+          nHits=size(HITS,1);
+
+          if ( nHits/numel(X1) > OPT.TRACKING_MINIMUM_OVERLAP_FRAC | ...
+               nHits/numel(X2) > OPT.TRACKING_MINIMUM_OVERLAP_FRAC | ...
+               nHits > OPT.TRACKING_MINIMUM_OVERLAP_POINTS )
+
+            matchingClusterID=[matchingClusterID,ii] ;
+
+          end
 
         end
 
+      end
+
     end
+
+  end
 
 end
 
@@ -793,84 +767,74 @@ function removeShortLivedTCs(minduration) ;
 %% Accesses main function variables: TIMECLUSTERS, CE
 %% Modifies TIMECLUSTERS
 
-    allTCindices=1:numel(TIMECLUSTERS) ;
-    throwAwayTCs=[] ;
+  allTCindices=1:numel(TIMECLUSTERS) ;
+  throwAwayTCs=[] ;
 
+  for iiii=[allTCindices]
+    thisTCtimeList=[] ;
 
-    for iiii=[allTCindices]
-
-        thisTCtimeList=[] ;
-
-        if ( numel(TIMECLUSTERS(iiii).ceid) < 1 )
-            throwAwayTCs=[throwAwayTCs,iiii] ;
-        end
-
-        for jjjj=1:numel(TIMECLUSTERS(iiii).ceid)
-
-            thisTCtimeList=[thisTCtimeList,...
-                            CE.time(TIMECLUSTERS(iiii).ceid(jjjj))] ;
-
-        end
-
-        duration=24*(max(thisTCtimeList)-min(thisTCtimeList)) ;
-
-        if ( duration < minduration-0.01 )
-            throwAwayTCs=[throwAwayTCs,iiii] ;
-        end
-
-
+    if ( numel(TIMECLUSTERS(iiii).ceid) < 1 )
+      throwAwayTCs=[throwAwayTCs,iiii] ;
     end
 
-    % Throw unwanted ones away
-    TIMECLUSTERS(throwAwayTCs)=[] ;
+    for jjjj=1:numel(TIMECLUSTERS(iiii).ceid)
+      thisTCtimeList=[thisTCtimeList,...
+                      CE.time(TIMECLUSTERS(iiii).ceid(jjjj))] ;
+    end
+
+    duration=24*(max(thisTCtimeList)-min(thisTCtimeList)) ;
+
+    if ( duration < minduration-0.01 )
+      throwAwayTCs=[throwAwayTCs,iiii] ;
+    end
+  end
+
+  % Throw unwanted ones away
+  TIMECLUSTERS(throwAwayTCs)=[] ;
 
 end
 
 
-function combineCloseProximityTCs(maxCombineDist,maxCombineTimeDiff) ;
+function combineCloseProximityTCs_by_centroid(maxCombineDist,maxCombineTimeDiff) ;
 
-    TC_eliminate_list=[];
+  TC_eliminate_list=[];
 
-    for ii=1:numel(TIMECLUSTERS)
+  for ii=1:numel(TIMECLUSTERS)
+
+    otherClusters=setxor(1:numel(TIMECLUSTERS),ii);
+
+    %Test for GG_before
+    for ii_before=[otherClusters]
+
+      jumpTime=CE.time(TIMECLUSTERS(ii).ceid(1)) - ...
+               CE.time(TIMECLUSTERS(ii_before).ceid(end));
+
+      jumpLon=CE.lon(TIMECLUSTERS(ii).ceid(1)) - ...
+              CE.lon(TIMECLUSTERS(ii_before).ceid(end));
+
+      jumpLat=CE.lat(TIMECLUSTERS(ii).ceid(1)) - ...
+              CE.lat(TIMECLUSTERS(ii_before).ceid(end));
+
+      jumpDist = sqrt(jumpLon^2 + jumpLat^2);
+
+      if ( abs(jumpTime) < maxCombineTimeDiff+0.01 & ...
+           abs(jumpDist) < maxCombineDist+0.01 )
+
+        TIMECLUSTERS(ii).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
+                            TIMECLUSTERS(ii_before).ceid]));
+
+        disp(['Combined LPTs: ',num2str(ii_before),' in to ',...
+              num2str(ii),'.'])
 
 
-        otherClusters=setxor(1:numel(TIMECLUSTERS),ii);
+        %TIMECLUSTERS(ii_before).ceid=[] ;
+        TC_eliminate_list=[TC_eliminate_list,ii_before];
 
-        %Test for GG_before
-        for ii_before=[otherClusters]
-
-            jumpTime=CE.time(TIMECLUSTERS(ii).ceid(1)) - ...
-                     CE.time(TIMECLUSTERS(ii_before).ceid(end));
-
-            jumpLon=CE.lon(TIMECLUSTERS(ii).ceid(1)) - ...
-                    CE.lon(TIMECLUSTERS(ii_before).ceid(end));
-
-            jumpLat=CE.lat(TIMECLUSTERS(ii).ceid(1)) - ...
-                    CE.lat(TIMECLUSTERS(ii_before).ceid(end));
-
-            jumpDist = sqrt(jumpLon^2 + jumpLat^2);
-
-            if ( abs(jumpTime) < maxCombineTimeDiff+0.01 & ...
-                 abs(jumpDist) < maxCombineDist+0.01 )
-
-                TIMECLUSTERS(ii).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
-                                    TIMECLUSTERS(ii_before).ceid]));
-
-                disp(['Combined LPTs: ',num2str(ii_before),' in to ',...
-                      num2str(ii),'.'])
-
-
-                %TIMECLUSTERS(ii_before).ceid=[] ;
-                TC_eliminate_list=[TC_eliminate_list,ii_before];
-
-            end
-
-        end
-
+      end
     end
+  end
 
-
-    TIMECLUSTERS(TC_eliminate_list)=[];
+  TIMECLUSTERS(TC_eliminate_list)=[];
 
 end
 
