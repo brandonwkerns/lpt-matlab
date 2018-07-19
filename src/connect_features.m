@@ -338,6 +338,7 @@ varid_ceid = netcdf.defVar(ncid, 'ceid', 'NC_INT', dimid_obs);
 varid_lon  = netcdf.defVar(ncid, 'lon', 'NC_DOUBLE', dimid_obs);
 varid_lat  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_obs);
 varid_time = netcdf.defVar(ncid, 'time', 'NC_DOUBLE', dimid_obs);
+varid_endtime = netcdf.defVar(ncid, 'end_of_accumulation_time', 'NC_DOUBLE', dimid_obs);
 varid_area = netcdf.defVar(ncid, 'area', 'NC_DOUBLE', dimid_obs);
 varid_volrain = netcdf.defVar(ncid, 'volrain', 'NC_DOUBLE', dimid_obs);
 
@@ -352,7 +353,8 @@ netcdf.endDef(ncid)
 netcdf.putVar(ncid, varid_ceid, 1:numel(fout_all.lon));
 netcdf.putVar(ncid, varid_lon, fout_all.lon);
 netcdf.putVar(ncid, varid_lat, fout_all.lat);
-netcdf.putVar(ncid, varid_time, 24.0 * (fout_all.time - datenum(1970,1,1,0,0,0)));
+netcdf.putVar(ncid, varid_time, 24.0 * (fout_all.time - datenum(1970,1,1,0,0,0)) - 0.5*ACCUMULATION_PERIOD);
+netcdf.putVar(ncid, varid_endtime, 24.0 * (fout_all.time - datenum(1970,1,1,0,0,0)));
 netcdf.putVar(ncid, varid_area, fout_all.area);
 netcdf.putVar(ncid, varid_volrain, fout_all.volrain);
 
@@ -368,8 +370,10 @@ ncwriteatt(netcdf_output_fn,'lon','units','degrees_east');
 ncwriteatt(netcdf_output_fn,'lon_grid','units','degrees_east');
 ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
 ncwriteatt(netcdf_output_fn,'lat_grid','units','degrees_north');
-
 ncwriteatt(netcdf_output_fn,'time','units','hours since 1970-1-1 0:0:0');
+ncwriteatt(netcdf_output_fn,'time','description','MIDDLE of accumulation period time. Most representative time.');
+ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','units','hours since 1970-1-1 0:0:0');
+ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','description','END of accumulation period time. For use with accumulated fields.');
 ncwriteatt(netcdf_output_fn,'area','units','km2');
 ncwriteatt(netcdf_output_fn,'area','coordinates','time lat lon');
 ncwriteatt(netcdf_output_fn,'volrain','units','mm - km2');
