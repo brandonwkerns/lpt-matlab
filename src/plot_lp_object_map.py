@@ -4,12 +4,12 @@ from netCDF4 import Dataset
 from mpl_toolkits.basemap import Basemap
 import glob
 
-dir = '../data/trmm/processed/g20_72h/thresh12/ceareas'
+dir = '../data/trmm/processed/g20_72h/thresh12/objects'
 plt.close('all')
 
-for fn in glob.glob(dir+'/ce_lpt_*.nc'):
+for fn in glob.glob(dir+'/objects_*.nc'):
 
-    print(fn)
+    print(fn, flush=True)
 
     out_str = fn[-24:-3]
     fout = ('ce_lpt_' + out_str + '__map.png')
@@ -48,6 +48,8 @@ for fn in glob.glob(dir+'/ce_lpt_*.nc'):
 
     x, y = map(lon, lat)
     map.scatter(x,y, area, marker='o',facecolors='none', edgecolors='blue',zorder=5)
+
+    plt.title(out_str)
 
     print(fout)
     plt.savefig(fout, dpi = 150)
