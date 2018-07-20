@@ -15,7 +15,7 @@ INTERIM_DATA_DIR_UNFILTERED = ['../data/',CASE_LABEL,'/interim/gridded_rain_rate
 PROCESSED_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/processed/',...
                         'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                         sprintf('%d',ACCUMULATION_PERIOD), ...
-                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/ceareas'];
+                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/objects'];
 
 %-----------------------------------------------------------------------------
 %-----------------------------------------------------------------------------
@@ -54,9 +54,9 @@ DD9 = sprintf('%02d', day9);
 HH9 = sprintf('%02d', hour9);
 
 ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
-allPixelList=[PROCESSED_DATA_DIR_OUT,'/ce_lpt_',ymd0_ymd9,'.mat'] ;
-netcdf_output_fn = [PROCESSED_DATA_DIR_OUT,'/ce_lpt_',ymd0_ymd9,'.nc'] ;
-fid=fopen([PROCESSED_DATA_DIR_OUT,'/ceareas_lpt_',ymd0_ymd9],'w') ;
+allPixelList=[PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9,'.mat'] ;
+netcdf_output_fn = [PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9,'.nc'] ;
+fid=fopen([PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9],'w') ;
 eval(['!mkdir -p ',PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9]);
 
 % Initialize the master output struct, which will contain the
@@ -102,8 +102,8 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     F.lat = ncread(this_interim_file_in, 'lat') ;
     F.rain = ncread(this_interim_file_in, 'rain')' ;
 
-    thisPixelList=[PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9,'/ce_lpt_',yyyy,mm,dd,hh,'.mat'];
-    thisCeareas=[PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9,'/ceareas_lpt_',yyyy,mm,dd,hh];
+    thisPixelList=[PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9,'/objects_',yyyy,mm,dd,hh,'.mat'];
+    thisCeareas=[PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9,'/objects_',yyyy,mm,dd,hh];
     thisFID=fopen(thisCeareas,'w') ;
 
     fileRain_Unfiltered=[INTERIM_DATA_DIR_UNFILTERED, ...
@@ -379,7 +379,7 @@ ncwriteatt(netcdf_output_fn,'area','coordinates','time lat lon');
 ncwriteatt(netcdf_output_fn,'volrain','units','mm - km2');
 ncwriteatt(netcdf_output_fn,'volrain','coordinates','time lat lon');
 
-ncwriteatt(netcdf_output_fn,'/','description', 'LPT tracking: ceareas feature snapshot file.');
+ncwriteatt(netcdf_output_fn,'/','description', 'LP objects (i.e., snapshots) file.');
 ncwriteatt(netcdf_output_fn,'/','creation_date',datestr(now));
 ncwriteatt(netcdf_output_fn,'/','smoothing',['Gaussian, ',num2str(FILTER_STANDARD_DEVIATION),...
     ' deg std dev., extending ',num2str(FILTER_WIDTH),'X std dev.']);
