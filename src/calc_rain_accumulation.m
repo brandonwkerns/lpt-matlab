@@ -26,26 +26,23 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     HH = sprintf('%02d', hour);
 
     RAINCOLLECT = [] ;
-    this_interim_file_out = [INTERIM_DATA_DIR_OUT,...
-        '/rain_accumulated_',sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
 
-    kkk=0 ;
 
     if (COLD_START_MODE == true) & (24.0*(dn-DN1) < COLD_START_CONST_PERIOD-0.01)
-      accumulation_time_list = DN1:datenum(0,0,0,DT,0,0):(DN1+COLD_START_CONST_PERIOD/24.0);
-      accumulation_scale_factor = ACCUMULATION_PERIOD / COLD_START_CONST_PERIOD;
+      accumulation_time_list = DN1+datenum(0,0,0,DT,0,0):datenum(0,0,0,DT,0,0):(DN1+COLD_START_CONST_PERIOD/24.0);
+      % accumulation_scale_factor = ACCUMULATION_PERIOD / COLD_START_CONST_PERIOD;
     elseif (COLD_START_MODE == true) & (24.0*(dn-DN1) < ACCUMULATION_PERIOD-0.01)
       hour_rel1 = -1*(24.0*(dn-DN1));
       accumulation_time_list = dn + (hour_rel1:DT:0)/24;
-      accumulation_scale_factor = ACCUMULATION_PERIOD/(24.0*(dn-DN1));
+      % accumulation_scale_factor = ACCUMULATION_PERIOD/(24.0*(dn-DN1));
     else
       hour_rel1 = -1*ACCUMULATION_PERIOD;
       accumulation_time_list = dn + (hour_rel1:DT:0)/24;
-      accumulation_scale_factor = 1.0;
+      % accumulation_scale_factor = 1.0;
     end
 
+    kkk=0 ;
     for dn0 = [accumulation_time_list]
-
         kkk=kkk+1 ;
 
         %dn0 = dn + hour_rel/24;
@@ -77,9 +74,14 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     end
 
     disp(['--> ',this_interim_file_out])
-    RAINAVG=nanmean(RAINCOLLECT,3)*24.0*accumulation_scale_factor; % units: mm/h --> mm/day
+    RAINAVG=nanmean(RAINCOLLECT,3)*24.0; %*accumulation_scale_factor; % units: mm/h --> mm/day
 
+    %%
     %% NetCDF output.
+    %%
+    this_interim_file_out = [INTERIM_DATA_DIR_OUT,...
+        '/rain_accumulated_',sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
+
     eval(['!mkdir -p ',INTERIM_DATA_DIR_OUT])
 
     % Define mode.
@@ -94,20 +96,18 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     varid_lat  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_lat);
     varid_time = netcdf.defVar(ncid, 'time', 'NC_DOUBLE', dimid_time);
     varid_rain = netcdf.defVar(ncid, 'rain', 'NC_DOUBLE', [dimid_lon dimid_lat dimid_time]);
-    %netcdf.putAtt(ncid,varid_time,'units','seconds since 1970-1-1 0:0:0');
-    %netcdf.putAtt(ncid,varid_rain,'units','mm day-1');
 
     netcdf.endDef(ncid)
 
     % Data Mode
     netcdf.putVar(ncid, varid_lon, f.lon);
     netcdf.putVar(ncid, varid_lat, f.lat);
-    netcdf.putVar(ncid, varid_time, 86400.0 * (dn - datenum(1970,1,1,0,0,0)));
+    netcdf.putVar(ncid, varid_time, 24.0 * (dn - datenum(1970,1,1,0,0,0)));
     netcdf.putVar(ncid, varid_rain, RAINAVG');
 
     netcdf.close(ncid)
 
-    ncwriteatt(this_interim_file_out,'time','units','seconds since 1970-1-1 0:0:0');
+    ncwriteatt(this_interim_file_out,'time','units','hours since 1970-1-1 0:0:0');
     ncwriteatt(this_interim_file_out,'rain','units','mm day-1');
     ncwriteatt(this_interim_file_out,'/','creation_date',datestr(now));
     ncwriteatt(this_interim_file_out,'/','smoothing','none');
