@@ -116,6 +116,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     %TODO: This needs to do area_conserve_remap if custom grid is selected.
 
     RAINFILTER=F.rain ;
+    RAINFILTER(~isfinite(RAINFILTER)) = 0.0;
     RAINFILTER_BW=logical(0.0*RAINFILTER) ;
     if (FEATURE_IS_GT_VALUE)
         RAINFILTER_BW(RAINFILTER > FEATURE_THRESHOLD_VALUE) = 1 ;
