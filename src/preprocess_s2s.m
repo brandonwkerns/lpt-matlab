@@ -24,7 +24,7 @@ F.time = double(ncread(this_raw_file,'time'))/24.0 + datenum(1900,1,1,0,0,0);
 F.precip_accum = ncread(this_raw_file,'tp'); %order of data is: lon, lat, time.
 F.precip = 0.0 * F.precip_accum;
 F.precip(:,:,2:end) = F.precip_accum(:,:,2:end) - F.precip_accum(:,:,1:end-1);
-conversion_factor = 6.0 ;%kg / m2 (6h) to mm h-1
+conversion_factor = 1.0/DT ;%kg / m2 (6h) to mm h-1
 F.precip = F.precip * conversion_factor;
 disp(this_raw_file) ;
 
