@@ -22,8 +22,6 @@ LON =  39.875 : DX : 178.875;  % Set the longitude grid.
 LAT = -25.875 : DX : 24.875;   % Set the latitude grid.
 
 % Time settings
-%DN1 = datenum(2017,6,1,0,0,0);      % Set the starting time as a datenum.
-%DN2 = datenum(2018,4,30,21,0,0);    % Set the ending time as a datenum.
 DN1 = datenum(2013,12,25,0,0,0);      % Set the starting time as a datenum.
 DN2 = datenum(2014,2,9,0,0,0);    % Set the ending time as a datenum.
 DT  = 6.0;                           % Set the time interval (hours).
