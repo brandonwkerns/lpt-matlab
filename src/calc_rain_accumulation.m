@@ -31,19 +31,24 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
     kkk=0 ;
 
-    if COLD_START_MODE == true & 24.0*(dn-DN1) < ACCUMULATION_PERIOD-0.01
+    if (COLD_START_MODE == true) & (24.0*(dn-DN1) < COLD_START_CONST_PERIOD-0.01)
+      accumulation_time_list = DN1:datenum(0,0,0,DT,0,0):(DN1+COLD_START_CONST_PERIOD/24.0);
+      accumulation_scale_factor = ACCUMULATION_PERIOD / COLD_START_CONST_PERIOD;
+    elseif (COLD_START_MODE == true) & (24.0*(dn-DN1) < ACCUMULATION_PERIOD-0.01)
       hour_rel1 = -1*(24.0*(dn-DN1));
+      accumulation_time_list = dn + (hour_rel1:DT:0)/24;
       accumulation_scale_factor = ACCUMULATION_PERIOD/(24.0*(dn-DN1));
     else
       hour_rel1 = -1*ACCUMULATION_PERIOD;
+      accumulation_time_list = dn + (hour_rel1:DT:0)/24;
       accumulation_scale_factor = 1.0;
     end
 
-    for hour_rel= hour_rel1:DT:0
+    for dn0 = [accumulation_time_list]
 
         kkk=kkk+1 ;
 
-        dn0 = dn + hour_rel/24;
+        %dn0 = dn + hour_rel/24;
         [year0,month0,day0,hour0] = datevec(dn0);
 
         YYYY0 = sprintf('%d', year0);
