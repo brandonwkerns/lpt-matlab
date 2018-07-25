@@ -73,7 +73,6 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
 
     end
 
-    disp(['--> ',this_interim_file_out])
     RAINAVG=nanmean(RAINCOLLECT,3)*24.0; %*accumulation_scale_factor; % units: mm/h --> mm/day
 
     %%
@@ -83,6 +82,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
         '/rain_accumulated_',sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
 
     eval(['!mkdir -p ',INTERIM_DATA_DIR_OUT])
+    disp(['--> ',this_interim_file_out])
 
     % Define mode.
     % Dims
