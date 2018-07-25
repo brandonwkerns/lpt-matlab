@@ -30,7 +30,16 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
         '/rain_accumulated_',sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
 
     kkk=0 ;
-    for hour_rel=-1*ACCUMULATION_PERIOD:DT:0
+
+    if COLD_START_MODE == true & 24.0*(dn-DN1) < ACCUMULATION_PERIOD-0.01
+      hour_rel1 = -1*(24.0*(dn-DN1));
+      accumulation_scale_factor = ACCUMULATION_PERIOD/(24.0*(dn-DN1));
+    else
+      hour_rel1 = -1*ACCUMULATION_PERIOD;
+      accumulation_scale_factor = 1.0;
+    end
+
+    for hour_rel= hour_rel1:DT:0
 
         kkk=kkk+1 ;
 
@@ -52,7 +61,6 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
         end
 
         disp(this_interim_file_in)
-        %f = load(this_interim_file_in);
         f.lon = ncread(this_interim_file_in,'lon');
         f.lat = ncread(this_interim_file_in,'lat');
         f.rain = ncread(this_interim_file_in,'rain')';
@@ -64,7 +72,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     end
 
     disp(['--> ',this_interim_file_out])
-    RAINAVG=nanmean(RAINCOLLECT,3)*24.0; % units: mm/h --> mm/day
+    RAINAVG=nanmean(RAINCOLLECT,3)*24.0*accumulation_scale_factor; % units: mm/h --> mm/day
 
     %% NetCDF output.
     eval(['!mkdir -p ',INTERIM_DATA_DIR_OUT])
