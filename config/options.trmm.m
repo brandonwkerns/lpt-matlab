@@ -22,10 +22,8 @@ LON =  39.875 : DX : 178.875;  % Set the longitude grid.
 LAT = -25.875 : DX : 24.875;   % Set the latitude grid.
 
 % Time settings
-%DN1 = datenum(2017,6,1,0,0,0);      % Set the starting time as a datenum.
-%DN2 = datenum(2018,4,30,21,0,0);    % Set the ending time as a datenum.
-DN1 = datenum(1998,1,3,0,0,0);      % Set the starting time as a datenum.
-DN2 = datenum(1999,6,30,21,0,0);    % Set the ending time as a datenum.
+DN1 = datenum(2011,6,1,0,0,0);      % Set the starting time as a datenum.
+DN2 = datenum(2012,6,30,21,0,0);    % Set the ending time as a datenum.
 DT  = 3.0;                           % Set the time interval (hours).
 
 %%
@@ -34,6 +32,17 @@ DT  = 3.0;                           % Set the time interval (hours).
 
 % Accumulation period, in hours.
 ACCUMULATION_PERIOD = 72.0;
+
+% If COLD_START_MODE is specified, assume there is no rain data before time zero.
+%   Calculate the accumulation as follows:
+%   For the first COLD_START_CONST_PERIOD, use the average rain rate during
+%    the period, scaled to a 3 day accumulation, for the period.
+%   After the COLD_START_CONST_PERIOD, use the accumulation up to that point,
+%   scaled to a 3 day accumulation.
+% If COLD_START_MODE is set to False, there should be gridded rain files for
+%   the ACCUMULATION_PERIOD time prior to the initial time.
+COLD_START_MODE = false;
+COLD_START_CONST_PERIOD = 24.0; % hours
 
 % Spatial filter (Gaussian bell shape) settings.
 % Standard deviation is in lat/lon.

@@ -33,6 +33,17 @@ DT  = 3.0;                           % Set the time interval (hours).
 % Accumulation period, in hours.
 ACCUMULATION_PERIOD = 72.0;
 
+% If COLD_START_MODE is specified, assume there is no rain data before time zero.
+%   Calculate the accumulation as follows:
+%   For the first COLD_START_CONST_PERIOD, use the average rain rate during
+%    the period, scaled to a 3 day accumulation, for the period.
+%   After the COLD_START_CONST_PERIOD, use the accumulation up to that point,
+%   scaled to a 3 day accumulation.
+% If COLD_START_MODE is set to False, there should be gridded rain files for
+%   the ACCUMULATION_PERIOD time prior to the initial time.
+COLD_START_MODE = false;
+COLD_START_CONST_PERIOD = 24.0; % hours
+
 % Spatial filter (Gaussian bell shape) settings.
 % Standard deviation is in lat/lon.
 % Filter (half) width is in terms of how many standard deviations.
