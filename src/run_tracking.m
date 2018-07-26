@@ -14,7 +14,7 @@ eval('!rm temp.mat')
 PROCESSED_DATA_DIR_IN = ['../data/',CASE_LABEL,'/processed/',...
                         'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                         sprintf('%d',ACCUMULATION_PERIOD), ...
-                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/ceareas'];
+                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/objects'];
 
 PROCESSED_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/processed/',...
                         'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
@@ -41,7 +41,7 @@ DD9 = sprintf('%02d', day9);
 HH9 = sprintf('%02d', hour9);
 
 ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
-allPixelList=[PROCESSED_DATA_DIR_IN,'/ce_lpt_',ymd0_ymd9,'.mat'] ;
+allPixelList=[PROCESSED_DATA_DIR_IN,'/objects_',ymd0_ymd9,'.mat'] ;
 
 connect_time_clusters(allPixelList, OPT, TRACKING_VERBOSE) ;
 
