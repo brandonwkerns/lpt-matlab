@@ -17,7 +17,7 @@ function TIMECLUSTERS=connect_time_clusters(master_ce_file, OPT, verbose)
 %%
 
 %% Set the tracking parameters here.
-maxTimeToConnect = OPT.TRACKING_MAX_TIME_TO_CONNECT;% 3 ; %Maximum time between clusters (hours) to
+maxTimeToConnect = OPT.TRACKING_MAX_TIME_TO_RECONNECT;% 3 ; %Maximum time between clusters (hours) to
                      %connect them. Especially useful if there are
                      %some empty frames vs. the case when some
                      %times have data but do not have clusters.
@@ -27,7 +27,7 @@ minDuration = OPT.TRACKING_MINIMUM_DURATION; % 96 ; % Minimum duration to keep i
 
 maxLat = OPT.FEATURE_MAX_LAT ; %Positive. Max distance off the equator to keep it.
 
-maxDistToConnect = OPT.TRACKING_MAX_DIST_TO_CONNECT ;%20.0 %; %Max. distance between centroids to match them.
+maxDistToConnect = 20.0 %; %Max. distance between centroids to match them.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,7 +59,7 @@ DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 %%    These need to be re-merged.
 %% -- Splits will have the splitting branches as the same TC.
 %%
-for dn=[DN(1:100)]
+for dn=[DN]
 
   ceINDXthisTime=find(CE.time == dn) ;
   if ( numel(ceINDXthisTime) < 1 )
