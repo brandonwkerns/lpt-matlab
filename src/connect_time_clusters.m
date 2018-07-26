@@ -59,7 +59,7 @@ DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 %%    These need to be re-merged.
 %% -- Splits will have the splitting branches as the same TC.
 %%
-for dn=[DN]
+for dn=[DN(1:100)]
 
   ceINDXthisTime=find(CE.time == dn) ;
   if ( numel(ceINDXthisTime) < 1 )
@@ -67,8 +67,12 @@ for dn=[DN]
   end
 
   if (numel(allDates) > 0.1)
-    prevDates=allDates(allDates > dn - 0.01 - OPT.TRACKING_MAX_TIME_TO_CONNECT/24.0 & ...
+    % prevDates=allDates(allDates > dn - 0.01 - OPT.TRACKING_MAX_TIME_TO_CONNECT/24.0 & ...
+    %                     allDates < dn-0.01 ) ;
+
+    prevDates=allDates(allDates > dn - 0.01 - OPT.DT/24.0 & ...
                         allDates < dn-0.01 ) ;
+
   else
     prevDates=[datenum(1900,1,1,0,0,0)] ;
   end
@@ -196,6 +200,7 @@ removeShortLivedTCs(minDuration) ;
 %% Some TCs were close enough to be considered a single track. Allow "center jumps".
 %%
 %combineCloseProximityTCs_by_centroid(10.0,3.0) ;
+%combineCloseProximityTCs_by_area(10.0,3.0) ;
 
 %%
 %% Get tracking parameters from the CE database
@@ -318,7 +323,7 @@ dimid_obs  = netcdf.defDim(ncid, 'obs', numel(stitch_lon));
 varid_lpt_id = netcdf.defVar(ncid, 'lpt_id', 'NC_INT', dimid_lpt_id);
 varid_obs = netcdf.defVar(ncid, 'obs', 'NC_INT', dimid_obs);
 varid_alltime = netcdf.defVar(ncid, 'alltime', 'NC_DOUBLE', dimid_alltime);
-varid_end_time = netcdf.defVar(ncid, 'end_of_accumulation_alltime', 'NC_DOUBLE', dimid_time);
+varid_end_time = netcdf.defVar(ncid, 'end_of_accumulation_alltime', 'NC_DOUBLE', dimid_alltime);
 varid_lon_grid  = netcdf.defVar(ncid, 'lon', 'NC_DOUBLE', dimid_lon_grid);
 varid_lat_grid  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_lat_grid);
 
@@ -384,8 +389,8 @@ end
 % Data mode
 % Coordinates
 netcdf.putVar(ncid, varid_lpt_id, 1:numel(TIMECLUSTERS));
-netcdf.putVar(ncid, varid_alltime, 86400.0 * (DN - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
-netcdf.putVar(ncid, varid_end_time, 86400.0 * (DN - datenum(1970,1,1,0,0,0)));
+netcdf.putVar(ncid, varid_alltime, 24.0 * (DN - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
+netcdf.putVar(ncid, varid_end_time, 24.0 * (DN - datenum(1970,1,1,0,0,0)));
 netcdf.putVar(ncid, varid_lon_grid, CE.grid.lon);
 netcdf.putVar(ncid, varid_lat_grid, CE.grid.lat);
 
@@ -401,8 +406,8 @@ netcdf.putVar(ncid, varid_lpt_meridional_propagation_speed, meridional_propagati
 
 % stitched data
 netcdf.putVar(ncid, varid_stitch_id, stitch_id);
-netcdf.putVar(ncid, varid_stitch_time, 86400.0 * (stitch_time - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
-netcdf.putVar(ncid, varid_stitch_end_time, 86400.0 * (stitch_time - datenum(1970,1,1,0,0,0)));
+netcdf.putVar(ncid, varid_stitch_time, 24.0 * (stitch_time - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
+netcdf.putVar(ncid, varid_stitch_end_time, 24.0 * (stitch_time - datenum(1970,1,1,0,0,0)));
 netcdf.putVar(ncid, varid_stitch_lon, stitch_lon);
 netcdf.putVar(ncid, varid_stitch_lat, stitch_lat);
 netcdf.putVar(ncid, varid_stitch_area, stitch_area);
@@ -428,13 +433,13 @@ ncwriteatt(netcdf_output_fn,'lon','units','degrees_east');
 ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
 ncwriteatt(netcdf_output_fn,'centroid_lon','units','degrees_east');
 ncwriteatt(netcdf_output_fn,'centroid_lat','units','degrees_north');
-ncwriteatt(netcdf_output_fn,'alltime','units','seconds since 1970-1-1 0:0:0');
+ncwriteatt(netcdf_output_fn,'alltime','units','hours since 1970-1-1 0:0:0');
 ncwriteatt(netcdf_output_fn,'alltime','description','Entire tracking period. Middle of accumulation period time.');
-ncwriteatt(netcdf_output_fn,'end_of_accumulation_alltime','units','seconds since 1970-1-1 0:0:0');
+ncwriteatt(netcdf_output_fn,'end_of_accumulation_alltime','units','hours since 1970-1-1 0:0:0');
 ncwriteatt(netcdf_output_fn,'end_of_accumulation_alltime','description','Entire tracking period. End of accumulation period time.');
-ncwriteatt(netcdf_output_fn,'time','units','seconds since 1970-1-1 0:0:0');
+ncwriteatt(netcdf_output_fn,'time','units','hours since 1970-1-1 0:0:0');
 ncwriteatt(netcdf_output_fn,'time','description','Stitched time of LPTs. Middle of accumulation period time.');
-ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','units','seconds since 1970-1-1 0:0:0');
+ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','units','hours since 1970-1-1 0:0:0');
 ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','description','Stitched time of LPTs. End of accumulation period time.');
 
 ncwriteatt(netcdf_output_fn,'zonal_propagation_speed','units','m s-1');
@@ -504,8 +509,8 @@ for indx = 1:numel(TIMECLUSTERS)
   netcdf.putVar(ncid, varid_1_duration, TIMECLUSTERS(indx).duration);
   netcdf.putVar(ncid, varid_lon_grid, CE.grid.lon);
   netcdf.putVar(ncid, varid_lat_grid, CE.grid.lat);
-  netcdf.putVar(ncid, varid_time, 86400.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
-  netcdf.putVar(ncid, varid_end_time, 86400.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0)));
+  netcdf.putVar(ncid, varid_time, 24.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
+  netcdf.putVar(ncid, varid_end_time, 24.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0)));
   netcdf.putVar(ncid, varid_lon, TIMECLUSTERS(indx).lon);
   netcdf.putVar(ncid, varid_lat, TIMECLUSTERS(indx).lat);
   netcdf.putVar(ncid, varid_area, TIMECLUSTERS(indx).area);
@@ -522,9 +527,9 @@ for indx = 1:numel(TIMECLUSTERS)
 
 
   % Attributes
-  ncwriteatt(netcdf_output_fn,'time','units','seconds since 1970-1-1 0:0:0');
+  ncwriteatt(netcdf_output_fn,'time','units','hours since 1970-1-1 0:0:0');
   ncwriteatt(netcdf_output_fn,'time','description','Middle of accumulation period time.');
-  ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','units','seconds since 1970-1-1 0:0:0');
+  ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','units','hours since 1970-1-1 0:0:0');
   ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','description','End of accumulation period time.');
   ncwriteatt(netcdf_output_fn,'lon','units','degrees_east');
   ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
