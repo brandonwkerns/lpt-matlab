@@ -3,16 +3,21 @@ import matplotlib.pylab as plt
 from netCDF4 import Dataset
 from mpl_toolkits.basemap import Basemap
 import glob
+import os
 
 dir = '../data/trmm/processed/g20_72h/thresh12/objects'
+out_dir = '../plots/trmm/processed/g20_72h/thresh12/objects'
 plt.close('all')
 
+os.system('mkdir -p ' + out_dir)
+
+#for fn in sorted(glob.glob(dir+'/objects_*.nc')):
 for fn in glob.glob(dir+'/objects_*.nc'):
 
     print(fn, flush=True)
 
     out_str = fn[-24:-3]
-    fout = ('ce_lpt_' + out_str + '__map.png')
+    fout = (out_dir + '/lp_objects_' + out_str + '__map.png')
 
     ## Set up figure
     fig = plt.figure(figsize=(11,8))
@@ -52,4 +57,4 @@ for fn in glob.glob(dir+'/objects_*.nc'):
     plt.title(out_str)
 
     print(fout)
-    plt.savefig(fout, dpi = 150)
+    plt.savefig(fout, dpi = 150,bbox_inches='tight')
