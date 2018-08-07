@@ -56,20 +56,24 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
         this_interim_file_in = [INTERIM_DATA_DIR_IN,...
             '/gridded_rain_rates_',YYYY0,MM0,DD0,HH0,'.nc'];
 
+        this_interim_file_out = [INTERIM_DATA_DIR_OUT,...
+            '/rain_accumulated_',sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
+
         if ( ~ exist(this_interim_file_in) )
             disp(['WARNING: Did not find ',this_interim_file_in])
             disp(['WARNING: ',this_interim_file_out,' may be wrong!'])
-            continue
+            
+        else
+
+            disp(this_interim_file_in)
+            f.lon = ncread(this_interim_file_in,'lon');
+            f.lat = ncread(this_interim_file_in,'lat');
+            f.rain = ncread(this_interim_file_in,'rain')';
+
+            THISRAIN = f.rain ;
+            THISRAIN(THISRAIN < -0.01) = NaN;
+            RAINCOLLECT(:,:,kkk) = THISRAIN;
         end
-
-        disp(this_interim_file_in)
-        f.lon = ncread(this_interim_file_in,'lon');
-        f.lat = ncread(this_interim_file_in,'lat');
-        f.rain = ncread(this_interim_file_in,'rain')';
-
-        THISRAIN = f.rain ;
-        THISRAIN(THISRAIN < -0.01) = NaN;
-        RAINCOLLECT(:,:,kkk) = THISRAIN;
 
     end
 
@@ -78,8 +82,6 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     %%
     %% NetCDF output.
     %%
-    this_interim_file_out = [INTERIM_DATA_DIR_OUT,...
-        '/rain_accumulated_',sprintf('%d',ACCUMULATION_PERIOD), 'h_',YYYY,MM,DD,HH,'.nc'];
 
     eval(['!mkdir -p ',INTERIM_DATA_DIR_OUT])
     disp(['--> ',this_interim_file_out])
