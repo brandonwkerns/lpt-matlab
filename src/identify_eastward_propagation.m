@@ -13,12 +13,12 @@ options
 PROCESSED_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
-                       'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
+                       'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters_strict_connecting'];
 
 EASTWARD_PROP_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
-                       'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation'];
+                       'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation_strict_connecting'];
 
 eval(['!mkdir -p ', EASTWARD_PROP_DATA_DIR])
 
@@ -61,7 +61,7 @@ fprintf(fid_wpac_lpts, '%s\n', header);
 fprintf(fid_non_east_propagating_lpts, '%s\n', header);
 
 
-for year1=2004:2017  ;
+for year1=1998:2017  ;
 %for year1=[2014]  ;
 
     year2=year1+1 ;
