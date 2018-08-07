@@ -200,7 +200,7 @@ removeShortLivedTCs(minDuration) ;
 %% Some TCs were close enough to be considered a single track. Allow "center jumps".
 %%
 %combineCloseProximityTCs_by_centroid(10.0,3.0) ;
-%combineCloseProximityTCs_by_area(10.0,3.0) ;
+combineCloseProximityTCs_by_area(OPT.ACCUMULATION_PERIOD/24.0) ;
 
 %%
 %% Get tracking parameters from the CE database
@@ -209,8 +209,10 @@ removeShortLivedTCs(minDuration) ;
 disp('Calculating tracking parameters.')
 calcTrackingParameters() ;
 
-disp('Calculating mask arrays.')
-maskArrays = calcMaskArrays(TIMECLUSTERS, CE, DN, OPT) ;
+if (OPT.CALC_MASK == true)
+  disp('Calculating mask arrays.')
+  maskArrays = calcMaskArrays(TIMECLUSTERS, CE, DN, OPT) ;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%  Output  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -357,15 +359,16 @@ netcdf.defVarFill(ncid,varid_stitch_effective_radius,false,MISSING);
 netcdf.defVarFill(ncid,varid_stitch_volrain,false,MISSING);
 
 % Mask
-varid_lpt_mask_by_id  = netcdf.defVar(ncid, 'mask_by_id', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
-varid_lpt_mask_by_id_with_accumulation  = netcdf.defVar(ncid, 'mask_with_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
-varid_lpt_mask_by_id_with_filter  = netcdf.defVar(ncid, 'mask_with_filter', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
-varid_lpt_mask_by_id_with_filter_and_accumulation  = netcdf.defVar(ncid, 'mask_with_filter_and_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
-netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id,true,true,1);
-netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter,true,true,1);
-netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_accumulation,true,true,1);
-netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter_and_accumulation,true,true,1);
-
+if (OPT.CALC_MASK == true)
+  varid_lpt_mask_by_id  = netcdf.defVar(ncid, 'mask_by_id', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
+  varid_lpt_mask_by_id_with_accumulation  = netcdf.defVar(ncid, 'mask_with_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
+  varid_lpt_mask_by_id_with_filter  = netcdf.defVar(ncid, 'mask_with_filter', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
+  varid_lpt_mask_by_id_with_filter_and_accumulation  = netcdf.defVar(ncid, 'mask_with_filter_and_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
+  netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id,true,true,1);
+  netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter,true,true,1);
+  netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_accumulation,true,true,1);
+  netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter_and_accumulation,true,true,1);
+end
 netcdf.endDef(ncid)
 
 % Get summary time series data.
@@ -416,15 +419,16 @@ netcdf.putVar(ncid, varid_stitch_effective_radius, stitch_effective_radius);
 netcdf.putVar(ncid, varid_stitch_volrain, stitch_volrain);
 
 % masks
-netcdf.putVar(ncid, varid_lpt_mask_by_id, ...
-  permute(maskArrays.all.mask_by_id, [3,2,1]));
-netcdf.putVar(ncid, varid_lpt_mask_by_id_with_accumulation, ...
-  permute(maskArrays.all.mask_by_id_with_accumulation, [3,2,1]));
-netcdf.putVar(ncid, varid_lpt_mask_by_id_with_filter, ...
-  permute(maskArrays.all.mask_by_id_with_filter, [3,2,1]));
-netcdf.putVar(ncid, varid_lpt_mask_by_id_with_filter_and_accumulation, ...
-  permute(maskArrays.all.mask_by_id_with_filter_and_accumulation, [3,2,1]));
-
+if (OPT.CALC_MASK == true)
+  netcdf.putVar(ncid, varid_lpt_mask_by_id, ...
+    permute(maskArrays.all.mask_by_id, [3,2,1]));
+  netcdf.putVar(ncid, varid_lpt_mask_by_id_with_accumulation, ...
+    permute(maskArrays.all.mask_by_id_with_accumulation, [3,2,1]));
+  netcdf.putVar(ncid, varid_lpt_mask_by_id_with_filter, ...
+    permute(maskArrays.all.mask_by_id_with_filter, [3,2,1]));
+  netcdf.putVar(ncid, varid_lpt_mask_by_id_with_filter_and_accumulation, ...
+    permute(maskArrays.all.mask_by_id_with_filter_and_accumulation, [3,2,1]));
+end
 netcdf.close(ncid)
 
 % Attributes
@@ -469,76 +473,80 @@ ncwriteatt(netcdf_output_fn,'max_volrain','units','mm km2');
 %% Individual LPT stuff.
 %%
 
-for indx = 1:numel(TIMECLUSTERS)
-
-  % Define mode.
-
-  netcdf_output_fn=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.lpt',sprintf('%03d',indx),'.nc'] ;
-  disp(['Writing NetCDF: ', netcdf_output_fn])
-  cmode = netcdf.getConstant('CLOBBER');
-  cmode = bitor(cmode,netcdf.getConstant('NETCDF4'));
-  ncid = netcdf.create(netcdf_output_fn, cmode);
-
-  dimid_lon_grid  = netcdf.defDim(ncid, 'lon', numel(CE.grid.lon));
-  dimid_lat_grid  = netcdf.defDim(ncid, 'lat', numel(CE.grid.lat));
-  dimid_obs  = netcdf.defDim(ncid, 'time', numel(TIMECLUSTERS(indx).time));
-  dimid_1  = netcdf.defDim(ncid, 'summary', 1);
-
-  % Individual LPT Vars
-  varid_1_duration = netcdf.defVar(ncid, 'duration', 'NC_DOUBLE', dimid_1);
-
-  varid_time = netcdf.defVar(ncid, 'time', 'NC_DOUBLE', dimid_obs);
-  varid_end_time = netcdf.defVar(ncid, 'end_of_accumulation_time', 'NC_DOUBLE', dimid_obs);
-  varid_lon  = netcdf.defVar(ncid, 'centroid_lon', 'NC_DOUBLE', dimid_obs);
-  varid_lat  = netcdf.defVar(ncid, 'centroid_lat', 'NC_DOUBLE', dimid_obs);
-  varid_lat_grid  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_lat_grid);
-  varid_lon_grid  = netcdf.defVar(ncid, 'lon', 'NC_DOUBLE', dimid_lon_grid);
-
-  varid_area = netcdf.defVar(ncid, 'area', 'NC_DOUBLE', dimid_obs);
-  varid_volrain = netcdf.defVar(ncid, 'volrain', 'NC_DOUBLE', dimid_obs);
-
-  varid_lpt_mask_by_id  = netcdf.defVar(ncid, 'mask_by_id', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_obs]);
-  varid_lpt_mask_by_id_with_filter  = netcdf.defVar(ncid, 'mask_with_filter', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_obs]);
-  netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id,true,true,1);
-  netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter,true,true,1);
+if (OPT.CALC_MASK == true)
 
 
-  % Data mode.
-  netcdf.endDef(ncid)
+  for indx = 1:numel(TIMECLUSTERS)
 
-  netcdf.putVar(ncid, varid_1_duration, TIMECLUSTERS(indx).duration);
-  netcdf.putVar(ncid, varid_lon_grid, CE.grid.lon);
-  netcdf.putVar(ncid, varid_lat_grid, CE.grid.lat);
-  netcdf.putVar(ncid, varid_time, 24.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
-  netcdf.putVar(ncid, varid_end_time, 24.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0)));
-  netcdf.putVar(ncid, varid_lon, TIMECLUSTERS(indx).lon);
-  netcdf.putVar(ncid, varid_lat, TIMECLUSTERS(indx).lat);
-  netcdf.putVar(ncid, varid_area, TIMECLUSTERS(indx).area);
-  netcdf.putVar(ncid, varid_volrain, TIMECLUSTERS(indx).volrain);
+    % Define mode.
 
+    netcdf_output_fn=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.lpt',sprintf('%03d',indx),'.nc'] ;
+    disp(['Writing NetCDF: ', netcdf_output_fn])
+    cmode = netcdf.getConstant('CLOBBER');
+    cmode = bitor(cmode,netcdf.getConstant('NETCDF4'));
+    ncid = netcdf.create(netcdf_output_fn, cmode);
 
-  netcdf.putVar(ncid, varid_lpt_mask_by_id, ...
-    permute(maskArrays.individual(indx).mask_by_id, [3,2,1]));
-  netcdf.putVar(ncid, varid_lpt_mask_by_id_with_filter, ...
-    permute(maskArrays.individual(indx).mask_by_id_with_filter, [3,2,1]));
+    dimid_lon_grid  = netcdf.defDim(ncid, 'lon', numel(CE.grid.lon));
+    dimid_lat_grid  = netcdf.defDim(ncid, 'lat', numel(CE.grid.lat));
+    dimid_obs  = netcdf.defDim(ncid, 'time', numel(TIMECLUSTERS(indx).time));
+    dimid_1  = netcdf.defDim(ncid, 'summary', 1);
 
+    % Individual LPT Vars
+    varid_1_duration = netcdf.defVar(ncid, 'duration', 'NC_DOUBLE', dimid_1);
 
-  netcdf.close(ncid)
+    varid_time = netcdf.defVar(ncid, 'time', 'NC_DOUBLE', dimid_obs);
+    varid_end_time = netcdf.defVar(ncid, 'end_of_accumulation_time', 'NC_DOUBLE', dimid_obs);
+    varid_lon  = netcdf.defVar(ncid, 'centroid_lon', 'NC_DOUBLE', dimid_obs);
+    varid_lat  = netcdf.defVar(ncid, 'centroid_lat', 'NC_DOUBLE', dimid_obs);
+    varid_lat_grid  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_lat_grid);
+    varid_lon_grid  = netcdf.defVar(ncid, 'lon', 'NC_DOUBLE', dimid_lon_grid);
 
+    varid_area = netcdf.defVar(ncid, 'area', 'NC_DOUBLE', dimid_obs);
+    varid_volrain = netcdf.defVar(ncid, 'volrain', 'NC_DOUBLE', dimid_obs);
 
-  % Attributes
-  ncwriteatt(netcdf_output_fn,'time','units','hours since 1970-1-1 0:0:0');
-  ncwriteatt(netcdf_output_fn,'time','description','Middle of accumulation period time.');
-  ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','units','hours since 1970-1-1 0:0:0');
-  ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','description','End of accumulation period time.');
-  ncwriteatt(netcdf_output_fn,'lon','units','degrees_east');
-  ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
-  ncwriteatt(netcdf_output_fn,'centroid_lon','units','degrees_east');
-  ncwriteatt(netcdf_output_fn,'centroid_lat','units','degrees_north');
-  ncwriteatt(netcdf_output_fn,'area','units','km2');
-  ncwriteatt(netcdf_output_fn,'volrain','units','mm km2');
+    varid_lpt_mask_by_id  = netcdf.defVar(ncid, 'mask_by_id', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_obs]);
+    varid_lpt_mask_by_id_with_filter  = netcdf.defVar(ncid, 'mask_with_filter', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_obs]);
+    netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id,true,true,1);
+    netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter,true,true,1);
 
 
+    % Data mode.
+    netcdf.endDef(ncid)
+
+    netcdf.putVar(ncid, varid_1_duration, TIMECLUSTERS(indx).duration);
+    netcdf.putVar(ncid, varid_lon_grid, CE.grid.lon);
+    netcdf.putVar(ncid, varid_lat_grid, CE.grid.lat);
+    netcdf.putVar(ncid, varid_time, 24.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
+    netcdf.putVar(ncid, varid_end_time, 24.0 * (TIMECLUSTERS(indx).time - datenum(1970,1,1,0,0,0)));
+    netcdf.putVar(ncid, varid_lon, TIMECLUSTERS(indx).lon);
+    netcdf.putVar(ncid, varid_lat, TIMECLUSTERS(indx).lat);
+    netcdf.putVar(ncid, varid_area, TIMECLUSTERS(indx).area);
+    netcdf.putVar(ncid, varid_volrain, TIMECLUSTERS(indx).volrain);
+
+
+    netcdf.putVar(ncid, varid_lpt_mask_by_id, ...
+      permute(maskArrays.individual(indx).mask_by_id, [3,2,1]));
+    netcdf.putVar(ncid, varid_lpt_mask_by_id_with_filter, ...
+      permute(maskArrays.individual(indx).mask_by_id_with_filter, [3,2,1]));
+
+
+    netcdf.close(ncid)
+
+
+    % Attributes
+    ncwriteatt(netcdf_output_fn,'time','units','hours since 1970-1-1 0:0:0');
+    ncwriteatt(netcdf_output_fn,'time','description','Middle of accumulation period time.');
+    ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','units','hours since 1970-1-1 0:0:0');
+    ncwriteatt(netcdf_output_fn,'end_of_accumulation_time','description','End of accumulation period time.');
+    ncwriteatt(netcdf_output_fn,'lon','units','degrees_east');
+    ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
+    ncwriteatt(netcdf_output_fn,'centroid_lon','units','degrees_east');
+    ncwriteatt(netcdf_output_fn,'centroid_lat','units','degrees_north');
+    ncwriteatt(netcdf_output_fn,'area','units','km2');
+    ncwriteatt(netcdf_output_fn,'volrain','units','mm km2');
+
+
+  end
 end
 
 disp('Done.')
@@ -800,6 +808,75 @@ function removeShortLivedTCs(minduration) ;
 end
 
 
+function combineCloseProximityTCs_by_area(maxCombineTimeDiff) ;
+
+  TC_eliminate_list=[];
+
+  for ii=1:numel(TIMECLUSTERS)
+
+    otherClusters=setxor(1:numel(TIMECLUSTERS),ii);
+
+    %Test for GG_before
+    for ii_before=[otherClusters]
+
+        jumpTime=CE.time(TIMECLUSTERS(ii).ceid(1)) - ...
+                CE.time(TIMECLUSTERS(ii_before).ceid(end));
+
+        dLON1=CE.lon(TIMECLUSTERS(ii).ceid(1)) - ...
+                CE.lon(TIMECLUSTERS(ii_before).ceid(end));
+
+        dLAT1=CE.lat(TIMECLUSTERS(ii).ceid(1)) - ...
+                CE.lat(TIMECLUSTERS(ii_before).ceid(end));
+
+        if ( sqrt(dLON1.^2 + dLAT1.^2 ) > maxDistToConnect )
+            continue
+        end
+
+       X1=CE.pixels(ii).x ;
+       Y1=CE.pixels(ii).y ;
+
+       X2=CE.pixels(ii_before).x ;
+       Y2=CE.pixels(ii_before).y ;
+
+       hits=[] ;
+
+       A=[X1,Y1] ;
+       B=[X2,Y2] ;
+
+       HITS=intersect(A,B,'rows') ;
+       nHits=size(HITS,1);
+
+       if ( abs(jumpTime) < maxCombineTimeDiff+0.01 & ...
+            (nHits/numel(X1) > OPT.TRACKING_MINIMUM_OVERLAP_FRAC | ...
+            nHits/numel(X2) > OPT.TRACKING_MINIMUM_OVERLAP_FRAC | ...
+            nHits > OPT.TRACKING_MINIMUM_OVERLAP_POINTS) )
+
+
+      % if ( abs(jumpTime) < maxCombineTimeDiff+0.01 & ...
+      %      abs(jumpDist) < maxCombineDist+0.01 )
+
+        TIMECLUSTERS(ii).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
+                            TIMECLUSTERS(ii_before).ceid]));
+
+        disp(['Combined LPTs: ',num2str(ii_before),' in to ',...
+              num2str(ii),'.'])
+
+        %TIMECLUSTERS(ii_before).ceid=[] ;
+        TC_eliminate_list=[TC_eliminate_list,ii_before];
+
+      end
+    end
+  end
+
+  TIMECLUSTERS(TC_eliminate_list)=[];
+
+end
+
+
+
+
+
+
 function combineCloseProximityTCs_by_centroid(maxCombineDist,maxCombineTimeDiff) ;
 
   TC_eliminate_list=[];
@@ -842,6 +919,11 @@ function combineCloseProximityTCs_by_centroid(maxCombineDist,maxCombineTimeDiff)
   TIMECLUSTERS(TC_eliminate_list)=[];
 
 end
+
+
+
+
+
 
 function calcTrackingParameters() ;
 
