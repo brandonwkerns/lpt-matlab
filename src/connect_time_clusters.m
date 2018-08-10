@@ -50,6 +50,7 @@ nextClusterID=1 ;  %Start time cluster ID count at 1.
 allDates=[] ;
 
 DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
+% DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN1+15;
 
 %%
 %% Loop forward in time.
@@ -150,18 +151,18 @@ for dn=[DN]
 end % END Loop over Dates
 
 %%
-%% Now combining the merging tracks which were duplicates.
-%%
-
-%mergeDuplicateTCs() ;
-splitDuplicateTCs() ;
-
-%%
 %% Some TCs were close enough to be considered a single track. Allow "center jumps".
 %%
 %combineCloseProximityTCs_by_centroid(10.0,3.0) ;
 combineCloseProximityTCs_by_area(OPT.ACCUMULATION_PERIOD/24.0) ;
 
+
+%%
+%% Now combining the merging tracks which were duplicates.
+%%
+
+%mergeDuplicateTCs() ;
+splitDuplicateTCs() ;
 
 %%
 %% Take out time clusters with insufficient duration.
@@ -347,8 +348,8 @@ durations = zeros(1,numel(TIMECLUSTERS));
 zonal_propagation_speeds = zeros(1,numel(TIMECLUSTERS));
 meridional_propagation_speeds = zeros(1,numel(TIMECLUSTERS));
 for indx = 1:numel(TIMECLUSTERS)
-  % indx
-  % TIMECLUSTERS(indx)
+ % indx
+ % TIMECLUSTERS(indx)
   durations(indx) = TIMECLUSTERS(indx).duration;
   max_areas(indx) = TIMECLUSTERS(indx).maxarea;
   max_volrains(indx) = TIMECLUSTERS(indx).maxvolrain;
@@ -387,6 +388,7 @@ netcdf.putVar(ncid, varid_stitch_size, stitch_size);
 netcdf.putVar(ncid, varid_stitch_effective_radius, stitch_effective_radius);
 netcdf.putVar(ncid, varid_stitch_volrain, stitch_volrain);
 
+%% Quik diagnosis plot.
 % stitch_lon2 = stitch_lon;
 % stitch_lon2(stitch_lon < -1000) = NaN;
 % stitch_time2 = stitch_time;
@@ -690,112 +692,110 @@ function splitDuplicateTCs()
       otherTCindices=setxor(iiii,allTCindices) ;
       thisClusterCEList=TIMECLUSTERS(iiii).ceid ;
 
+      intersectingTCindices = [];
       for jjjj = [otherTCindices]
-
         intersections=intersect(TIMECLUSTERS(iiii).ceid,...
                                 TIMECLUSTERS(jjjj).ceid);
 
         if (numel(intersections) > 0)
+          intersectingTCindices = [intersectingTCindices, jjjj];
+        end
 
-          still_work_to_be_done = true;
-          if verbose
-            disp([num2str(iiii), ' overlaps ', num2str(jjjj)])
-          end
-          %Get earliest intersecting time.
-          intersectionTimes=CE.time(intersections) ;
-          firstIntersectionTime=min(intersectionTimes) ;
-          lastIntersectionTime=max(intersectionTimes) ;
-
-          if (verbose)
-            [firstY, firstM, firstD, firstH] = datevec(firstIntersectionTime);
-            [lastY, lastM, lastD, lastH] = datevec(lastIntersectionTime);
-            disp(['  from ', num2str(firstY),sprintf('%02d',firstM),...
-                  sprintf('%02d',firstD),sprintf('%02d',firstH), ...
-                  '  to ', num2str(lastY),sprintf('%02d',lastM),...
-                  sprintf('%02d',lastD),sprintf('%02d',lastH),'.'])
-          end
-
-          %Get accumulated area of thisCluster
-          thisClusterAccumArea=0.0 ;
-          for thisClusterCEID=TIMECLUSTERS(iiii).ceid
-
-            thisClusterAccumArea=thisClusterAccumArea+...
-                CE.area(thisClusterCEID);
-
-          end
-
-          %Get accumulated area of otherCluster
-          otherClusterAccumArea=0.0 ;
-          for otherClusterCEID=TIMECLUSTERS(jjjj).ceid
-
-            otherClusterAccumArea=otherClusterAccumArea+...
-                CE.area(otherClusterCEID);
-
-          end
-
-
-          if ( thisClusterAccumArea > otherClusterAccumArea )
-
-            TIMECLUSTERS(jjjj).ceid=setxor(TIMECLUSTERS(jjjj).ceid,...
-                                           intersections);
-
-            if verbose
-              disp(['  --> ', num2str(iiii), ' wins.'])
-            end
-
-            if (numel(TIMECLUSTERS(jjjj).ceid) < 1)
-              if verbose
-                disp(['Completely absorbed! Will throw away ID=',num2str(jjjj)])
-              end
-              throwAwayTCs = [throwAwayTCs, jjjj];
-            end
-
-          else
-
-            TIMECLUSTERS(iiii).ceid=setxor(TIMECLUSTERS(iiii).ceid,...
-                                           intersections);
-            if verbose
-              disp(['  --> ', num2str(jjjj), ' wins.'])
-            end
-
-            if (numel(TIMECLUSTERS(iiii).ceid) < 1)
-              if verbose
-                disp(['Completely absorbed! Will throw away ID=',num2str(iiii)])
-              end
-              throwAwayTCs = [throwAwayTCs, iiii];
-            end
-
-
-          end
-
-          break_up_TCs_with_gap()
-
-          break  % Break out of inner jjjj for loop.
-        end %if (numel(intersections) > 0)
-      end %for jjjj = [otherTCindices]
-
-      if still_work_to_be_done
-        break % Break out of outer iiii for loop.
       end
 
-    end %for iiii=[allTCindices]
+      if numel(intersectingTCindices) > 0
+        still_work_to_be_done = true;
+        if verbose
+          disp([num2str(iiii), ' overlaps: ', num2str(intersectingTCindices)])
+        end
 
+        %Get accumulated area of thisCluster
+        thisClusterAccumArea=0.0 ;
+        for thisClusterCEID=TIMECLUSTERS(iiii).ceid
+          thisClusterAccumArea=thisClusterAccumArea+...
+              CE.area(thisClusterCEID);
+        end
+
+        %Get accumulated area of otherCluster's
+        otherClusterAccumArea = zeros(1, numel(intersectingTCindices));
+        for kk = 1:numel(intersectingTCindices)
+          for otherClusterCEID=[TIMECLUSTERS(intersectingTCindices(kk)).ceid]
+            otherClusterAccumArea(kk)=otherClusterAccumArea(kk) + ...
+                CE.area(otherClusterCEID);
+          end
+        end
+
+        if ( thisClusterAccumArea > max(otherClusterAccumArea) )
+
+          if verbose
+            disp(['  --> ', num2str(iiii), ' wins.'])
+          end
+
+          winner_index = iiii;
+          loser_indices = intersectingTCindices;
+
+        else
+
+          [maxAccumArea, maxAccumAreaIndx] = max(otherClusterAccumArea);
+
+          if verbose
+            disp(['  --> ', num2str(intersectingTCindices(maxAccumAreaIndx)), ' wins.'])
+          end
+
+          winner_index = intersectingTCindices(maxAccumAreaIndx);
+          loser_indices = intersectingTCindices;
+          loser_indices(maxAccumAreaIndx) = [];
+          loser_indices = [loser_indices, iiii];
+
+        end
+
+        %% Clip the tracks of each of the "loser" indices.
+        %% Mark it for elimination, or split it up if needed.
+        for this_loser_index = [loser_indices]
+
+          intersections=intersect(TIMECLUSTERS(winner_index).ceid,...
+                                  TIMECLUSTERS(this_loser_index).ceid);
+
+          TIMECLUSTERS(this_loser_index).ceid=...
+              setxor(TIMECLUSTERS(this_loser_index).ceid, intersections);
+
+          if (numel(TIMECLUSTERS(this_loser_index).ceid) < 1)
+            if verbose
+              disp(['Completely absorbed! Will throw away ID=',num2str(this_loser_index)])
+            end
+            throwAwayTCs = [throwAwayTCs, this_loser_index];
+          end
+
+          break_up_TCs_with_gap(this_loser_index);
+        end
+      end %if numel(intersectingTCindices) > 0
+
+    end %for iiii=[allTCindices]
   end %while still_work_to_be_done
 
   % Throw unwanted ones away
+
+  throwAwayTCs = unique(throwAwayTCs);
+  if verbose & numel(throwAwayTCs) > 0
+    disp(['Removed the following due to being completely absorbed in merging step: ',num2str(throwAwayTCs)])
+    disp(['(Database also re-ordered.)'])
+  end
   TIMECLUSTERS(throwAwayTCs)=[] ;
 
 end
 
 
-function break_up_TCs_with_gap()
+function break_up_TCs_with_gap(indices)
 
   still_work_to_be_done = true;
   while still_work_to_be_done
 
     allTCindices = 1:numel(TIMECLUSTERS) ;
+    if (nargin < 1)
+      indices = allTCindices;
+    end
 
-    for iiii = [allTCindices]
+    for iiii = [indices]
       still_work_to_be_done = false;
 
       this_TC_time_list = [];
@@ -860,6 +860,7 @@ function removeShortLivedTCs(minduration) ;
   end
 
   % Throw unwanted ones away
+  throwAwayTCs = unique(throwAwayTCs);
   if verbose
     disp(['Removed the following due to short duration: ',num2str(throwAwayTCs)])
     disp(['(Database also re-ordered.)'])
@@ -892,11 +893,11 @@ function combineCloseProximityTCs_by_area(maxCombineTimeDiff) ;
             continue
         end
 
-       X1=CE.pixels(ii).x ;
-       Y1=CE.pixels(ii).y ;
+       X1=CE.pixels(TIMECLUSTERS(ii).ceid(1)).x ;
+       Y1=CE.pixels(TIMECLUSTERS(ii).ceid(1)).y ;
 
-       X2=CE.pixels(ii_before).x ;
-       Y2=CE.pixels(ii_before).y ;
+       X2=CE.pixels(TIMECLUSTERS(ii_before).ceid(end)).x ;
+       Y2=CE.pixels(TIMECLUSTERS(ii_before).ceid(end)).y ;
 
        hits=[] ;
 
@@ -923,6 +924,13 @@ function combineCloseProximityTCs_by_area(maxCombineTimeDiff) ;
 
       end
     end
+  end
+
+  TC_eliminate_list = unique(TC_eliminate_list);
+
+  if verbose
+    disp(['Removed the following due to being absorbed into other tracks: ',num2str(TC_eliminate_list)])
+    disp(['(Database also re-ordered.)'])
   end
 
   TIMECLUSTERS(TC_eliminate_list)=[];
