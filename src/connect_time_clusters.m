@@ -50,7 +50,7 @@ nextClusterID=1 ;  %Start time cluster ID count at 1.
 allDates=[] ;
 
 DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
-% DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN1+15;
+% DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN1+92;
 
 %%
 %% Loop forward in time.
@@ -156,7 +156,6 @@ end % END Loop over Dates
 %combineCloseProximityTCs_by_centroid(10.0,3.0) ;
 combineCloseProximityTCs_by_area(OPT.ACCUMULATION_PERIOD/24.0) ;
 
-
 %%
 %% Now combining the merging tracks which were duplicates.
 %%
@@ -168,7 +167,12 @@ splitDuplicateTCs() ;
 %% Take out time clusters with insufficient duration.
 %%
 
+% removeShortLivedTCs(3.0) ;
 removeShortLivedTCs(minDuration) ;
+
+
+TIMECLUSTERS=put_tracks_in_order(TIMECLUSTERS);
+
 
 %%
 %% Get tracking parameters from the CE database
@@ -456,7 +460,6 @@ ncwriteatt(netcdf_output_fn,'max_volrain','units','mm km2');
 
 if (OPT.CALC_MASK == true)
 
-
   for indx = 1:numel(TIMECLUSTERS)
 
     % Define mode.
@@ -510,9 +513,7 @@ if (OPT.CALC_MASK == true)
     netcdf.putVar(ncid, varid_lpt_mask_by_id_with_filter, ...
       permute(maskArrays.individual(indx).mask_by_id_with_filter, [3,2,1]));
 
-
     netcdf.close(ncid)
-
 
     % Attributes
     ncwriteatt(netcdf_output_fn,'time','units','hours since 1970-1-1 0:0:0');
@@ -526,16 +527,10 @@ if (OPT.CALC_MASK == true)
     ncwriteatt(netcdf_output_fn,'area','units','km2');
     ncwriteatt(netcdf_output_fn,'volrain','units','mm km2');
 
-
   end
 end
 
 disp('Done.')
-
-
-
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -631,66 +626,79 @@ end
 
 function mergeDuplicateTCs()
 
-%% Accesses main function variables: TIMECLUSTERS
-%% Modifies TIMECLUSTERS
+  %% Accesses main function variables: TIMECLUSTERS
+  %% Modifies TIMECLUSTERS
 
-    allTCindices=1:numel(TIMECLUSTERS) ;
-    throwAwayTCs=[] ;
+  still_work_to_be_done = true;
+
+  allTCindices=1:numel(TIMECLUSTERS) ;
+  throwAwayTCs=[] ;
+
+  iteration = 0;
+  while still_work_to_be_done
+
+    iteration = iteration + 1;
+    disp(['----  iteration ',num2str(iteration),'  ----'])
+    allTCindices = 1:numel(TIMECLUSTERS) ;
+    still_work_to_be_done = false;
 
     for iiii=[allTCindices]
 
-        otherTCindices=setxor(iiii,allTCindices) ;
+      otherTCindices=setdiff(allTCindices,iiii) ;
+      thisClusterCEList=TIMECLUSTERS(iiii).ceid ;
 
-        thisClusterCEList=TIMECLUSTERS(iiii).ceid ;
+      for jjjj=[otherTCindices]
 
+        if ( numel(intersect(TIMECLUSTERS(iiii).ceid,...
+                             TIMECLUSTERS(jjjj).ceid))>0)
 
-        for jjjj=[otherTCindices]
+          TIMECLUSTERS(iiii).ceid=sort(union(TIMECLUSTERS(iiii).ceid,...
+                                        TIMECLUSTERS(jjjj).ceid));
 
-            if ( numel(intersect(TIMECLUSTERS(iiii).ceid,...
-                                 TIMECLUSTERS(jjjj).ceid))>0)
+          TIMECLUSTERS(jjjj).ceid=[] ;
+          throwAwayTCs=[throwAwayTCs,jjjj] ;
 
-
-                TIMECLUSTERS(iiii).ceid=sort(union(TIMECLUSTERS(iiii).ceid,...
-                                              TIMECLUSTERS(jjjj).ceid));
-
-                TIMECLUSTERS(jjjj).ceid=[] ;
-                throwAwayTCs=[throwAwayTCs,jjjj] ;
-
-
-            end
+          still_work_to_be_done = true;
+          break
 
         end
+      end
+
+      if (still_work_to_be_done)
+        break
+      end
 
     end
 
-    % Throw away any empty TIMECLUSTERS
-
-    TIMECLUSTERS(throwAwayTCs)=[] ;
+  end
+  % Throw away the tagged TIMECLUSTERS
+  TIMECLUSTERS(throwAwayTCs)=[] ;
 
 end
 
 
 function splitDuplicateTCs()
 
-%% Accesses main function variables: TIMECLUSTERS
-%% Modifies TIMECLUSTERS
-%%
-%% When two timecluster tracks merge, only keep the one with the
-%% longer history in terms of accumulated added area.
-
+  %% Accesses main function variables: TIMECLUSTERS
+  %% Modifies TIMECLUSTERS
+  %%
+  %% When two timecluster tracks merge, only keep the one with the
+  %% longer history in terms of accumulated added area.
 
   still_work_to_be_done = true;
   throwAwayTCs = [];
 
+  iteration = 0;
   while still_work_to_be_done
 
+    iteration = iteration + 1;
+    disp(['----  iteration ',num2str(iteration),'  ----'])
     allTCindices = 1:numel(TIMECLUSTERS) ;
 
     for iiii = [allTCindices]
 
       still_work_to_be_done = false;
-      otherTCindices=setxor(iiii,allTCindices) ;
-      thisClusterCEList=TIMECLUSTERS(iiii).ceid ;
+      otherTCindices=setdiff(allTCindices,iiii) ;
 
       intersectingTCindices = [];
       for jjjj = [otherTCindices]
@@ -704,7 +712,6 @@ function splitDuplicateTCs()
       end
 
       if numel(intersectingTCindices) > 0
-        still_work_to_be_done = true;
         if verbose
           disp([num2str(iiii), ' overlaps: ', num2str(intersectingTCindices)])
         end
@@ -732,7 +739,7 @@ function splitDuplicateTCs()
           end
 
           winner_index = iiii;
-          loser_indices = intersectingTCindices;
+          loser_indices = sort(intersectingTCindices);
 
         else
 
@@ -745,7 +752,7 @@ function splitDuplicateTCs()
           winner_index = intersectingTCindices(maxAccumAreaIndx);
           loser_indices = intersectingTCindices;
           loser_indices(maxAccumAreaIndx) = [];
-          loser_indices = [loser_indices, iiii];
+          loser_indices = sort([loser_indices, iiii]);
 
         end
 
@@ -753,11 +760,39 @@ function splitDuplicateTCs()
         %% Mark it for elimination, or split it up if needed.
         for this_loser_index = [loser_indices]
 
+          % NOTE!!! The "winner" index is not necessarily the starting "iiii" indx!
+          % Therefore, we need to check for intersections again.
           intersections=intersect(TIMECLUSTERS(winner_index).ceid,...
                                   TIMECLUSTERS(this_loser_index).ceid);
+          if (numel(intersections) < 1)
+            if verbose
+              disp(['Skipping ', num2str(this_loser_index), ' since it does not intersect the Winner.'])
+            end
+            continue
+          end
 
+          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+          %% The "loser" track can either merge on to, or split off of the "winner" track,
+          %%  OR it can do both! Handle each of these scanarios below.
+          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+          %% "split" track portion, if it exists.
+          %% (This does NOT get done if there is no split)
+          if (sum(TIMECLUSTERS(this_loser_index).ceid > max(intersections)) > 0)
+            startNewTimeCluster(nextClusterID) ;
+            if ( verbose > 0 )
+              disp(['        A track split off (ID=',num2str(this_loser_index),').'])
+              disp(['        + Split portion is a new time cluster: ID = ',num2str(nextClusterID)])
+            end
+            TIMECLUSTERS(nextClusterID).ceid=...
+                TIMECLUSTERS(this_loser_index).ceid(TIMECLUSTERS(this_loser_index).ceid > max(intersections));
+            nextClusterID = nextClusterID + 1 ;
+          end
+
+          %% "merge" track portion, if it exists.
+          %% (If no merge, the track gets flagged for removal.)
           TIMECLUSTERS(this_loser_index).ceid=...
-              setxor(TIMECLUSTERS(this_loser_index).ceid, intersections);
+              TIMECLUSTERS(this_loser_index).ceid(TIMECLUSTERS(this_loser_index).ceid < min(intersections));
 
           if (numel(TIMECLUSTERS(this_loser_index).ceid) < 1)
             if verbose
@@ -766,15 +801,16 @@ function splitDuplicateTCs()
             throwAwayTCs = [throwAwayTCs, this_loser_index];
           end
 
-          break_up_TCs_with_gap(this_loser_index);
         end
+
+        still_work_to_be_done = true;
+        break
       end %if numel(intersectingTCindices) > 0
 
     end %for iiii=[allTCindices]
   end %while still_work_to_be_done
 
-  % Throw unwanted ones away
-
+  % Throw the flagged tracks away.
   throwAwayTCs = unique(throwAwayTCs);
   if verbose & numel(throwAwayTCs) > 0
     disp(['Removed the following due to being completely absorbed in merging step: ',num2str(throwAwayTCs)])
@@ -785,57 +821,10 @@ function splitDuplicateTCs()
 end
 
 
-function break_up_TCs_with_gap(indices)
-
-  still_work_to_be_done = true;
-  while still_work_to_be_done
-
-    allTCindices = 1:numel(TIMECLUSTERS) ;
-    if (nargin < 1)
-      indices = allTCindices;
-    end
-
-    for iiii = [indices]
-      still_work_to_be_done = false;
-
-      this_TC_time_list = [];
-      for thisCE = [TIMECLUSTERS(iiii).ceid]
-        this_TC_time_list = [this_TC_time_list, CE.time(thisCE)];
-      end
-      [this_TC_time_list, this_TC_time_list_idx] = sort(this_TC_time_list);
-      this_TC_ceid_list = TIMECLUSTERS(iiii).ceid(this_TC_time_list_idx);
-
-      for tt = 2:numel(this_TC_time_list)
-        if (24.0*(this_TC_time_list(tt) - this_TC_time_list(tt-1)) > (OPT.DT+ 0.001))
-
-          startNewTimeCluster(nextClusterID) ;
-          if ( verbose > 0 )
-            disp(['        A track got split up (ID=',num2str(iiii),').'])
-            disp(['        + Created new time cluster: ID = ',num2str(nextClusterID)])
-          end
-          addCluster(nextClusterID, this_TC_ceid_list(tt:end)) ;
-          nextClusterID = nextClusterID + 1 ;
-
-          TIMECLUSTERS(iiii).ceid = this_TC_ceid_list(1:tt-1);
-
-          still_work_to_be_done = true;
-          break
-        end
-      end
-
-      if still_work_to_be_done
-        break
-      end
-
-    end %for iiii = [allTCindices]
-  end
-end
-
-
 function removeShortLivedTCs(minduration) ;
 
-%% Accesses main function variables: TIMECLUSTERS, CE
-%% Modifies TIMECLUSTERS
+  %% Accesses main function variables: TIMECLUSTERS, CE
+  %% Modifies TIMECLUSTERS
 
   allTCindices=1:numel(TIMECLUSTERS) ;
   throwAwayTCs=[] ;
@@ -876,7 +865,7 @@ function combineCloseProximityTCs_by_area(maxCombineTimeDiff) ;
 
   for ii=1:numel(TIMECLUSTERS)
 
-    otherClusters=setxor(1:numel(TIMECLUSTERS),ii);
+    otherClusters=setdiff(1:numel(TIMECLUSTERS),ii);
 
     %Test for GG_before
     for ii_before=[otherClusters]
@@ -948,7 +937,7 @@ function combineCloseProximityTCs_by_centroid(maxCombineDist,maxCombineTimeDiff)
 
   for ii=1:numel(TIMECLUSTERS)
 
-    otherClusters=setxor(1:numel(TIMECLUSTERS),ii);
+    otherClusters=setdiff(1:numel(TIMECLUSTERS),ii);
 
     %Test for GG_before
     for ii_before=[otherClusters]
@@ -984,10 +973,6 @@ function combineCloseProximityTCs_by_centroid(maxCombineDist,maxCombineTimeDiff)
   TIMECLUSTERS(TC_eliminate_list)=[];
 
 end
-
-
-
-
 
 
 function calcTrackingParameters() ;
@@ -1166,120 +1151,137 @@ function calcTrackingParameters() ;
         end
     end
 
-end
+end %local function
+
+
+
+function NEWTIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
+
+  % Put TIMECLUSTERS tracks in order by starting ceid.
+
+  starting_ceid_list = [];
+  for ii = 1:numel(TIMECLUSTERS)
+    starting_ceid_list(ii) = TIMECLUSTERS(ii).ceid(1);
+  end
+
+  [sort_ceid_list, sort_ceid_list_indx] = sort(starting_ceid_list);
+
+  if (verbose)
+    disp(['Sorting by order of starting ceid: ', num2str(sort_ceid_list_indx)])
+  end
+
+  NEWTIMECLUSTERS = TIMECLUSTERS(sort_ceid_list_indx);
+end %local function
+
 
 end %% End of parent function
 
 
 
 function maskArrays = calcMaskArrays(TIMECLUSTERS, CE, DN, OPT) %FILTER_STANDARD_DEVIATION, ACCUMULATION_PERIOD)
-% function: Short description
-%
-% Extended description
-% Single point masks are all points within the LPT contour.
-% Filter width masks include points within the filter radius (e.g., standard deviation) from LPT contour.
-% Uses TIMECLUSTERS struct array
-%   to calculate 3-D (lat/lon/time) mask arrays.
+  % function: Short description
+  %
+  % Extended description
+  % Single point masks are all points within the LPT contour.
+  % Filter width masks include points within the filter radius (e.g., standard deviation) from LPT contour.
+  % Uses TIMECLUSTERS struct array
+  %   to calculate 3-D (lat/lon/time) mask arrays.
 
 
-np = round(OPT.FILTER_STANDARD_DEVIATION);
-grid_nx = numel(CE.grid.lon);
-grid_ny = numel(CE.grid.lat);
+  np = round(OPT.FILTER_STANDARD_DEVIATION);
+  grid_nx = numel(CE.grid.lon);
+  grid_ny = numel(CE.grid.lat);
 
-maskArrays.all.mask_by_id = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
-maskArrays.all.mask_by_id_with_filter = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
-maskArrays.all.mask_by_id_with_accumulation = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
-maskArrays.all.mask_by_id_with_filter_and_accumulation = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
-maskArrays.individual = [];
+  maskArrays.all.mask_by_id = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
+  maskArrays.all.mask_by_id_with_filter = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
+  maskArrays.all.mask_by_id_with_accumulation = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
+  maskArrays.all.mask_by_id_with_filter_and_accumulation = -1+zeros(numel(DN), numel(CE.grid.lat), numel(CE.grid.lon));
+  maskArrays.individual = [];
 
-for indx = 1:numel(TIMECLUSTERS)
-  disp(['  ', num2str(indx), ' of ', num2str(numel(TIMECLUSTERS))])
-  this_mask_array.mask_by_id = -1+zeros(numel(TIMECLUSTERS(indx).time), numel(CE.grid.lat), numel(CE.grid.lon));
-  this_mask_array.mask_by_id_with_filter = -1+zeros(numel(TIMECLUSTERS(indx).time), numel(CE.grid.lat), numel(CE.grid.lon));
+  for indx = 1:numel(TIMECLUSTERS)
+    disp(['  ', num2str(indx), ' of ', num2str(numel(TIMECLUSTERS))])
+    this_mask_array.mask_by_id = -1+zeros(numel(TIMECLUSTERS(indx).time), numel(CE.grid.lat), numel(CE.grid.lon));
+    this_mask_array.mask_by_id_with_filter = -1+zeros(numel(TIMECLUSTERS(indx).time), numel(CE.grid.lat), numel(CE.grid.lon));
 
-  for iii = 1:numel(TIMECLUSTERS(indx).time)
+    for iii = 1:numel(TIMECLUSTERS(indx).time)
 
-    tindx = find(DN > TIMECLUSTERS(indx).time(iii) - 0.0001 & ...
-      DN < TIMECLUSTERS(indx).time(iii) + 0.0001);
+      tindx = find(DN > TIMECLUSTERS(indx).time(iii) - 0.0001 & ...
+        DN < TIMECLUSTERS(indx).time(iii) + 0.0001);
 
-    tindx2 = find(DN > TIMECLUSTERS(indx).time(iii) - 0.0001 - OPT.ACCUMULATION_PERIOD / 24.0 & ...
-      DN < TIMECLUSTERS(indx).time(iii) + 0.0001);
+      tindx2 = find(DN > TIMECLUSTERS(indx).time(iii) - 0.0001 - OPT.ACCUMULATION_PERIOD / 24.0 & ...
+        DN < TIMECLUSTERS(indx).time(iii) + 0.0001);
 
-    %TIMECLUSTERS(indx).ce(iii)
-    for ce = [TIMECLUSTERS(indx).ce(iii)];
-      for cccc = 1:numel(ce.pixels)  %Sometimes more than one CE per time.
-        for iiii = 1:numel(ce.pixels(cccc).x)
+      %TIMECLUSTERS(indx).ce(iii)
+      for ce = [TIMECLUSTERS(indx).ce(iii)];
+        for cccc = 1:numel(ce.pixels)  %Sometimes more than one CE per time.
+          for iiii = 1:numel(ce.pixels(cccc).x)
 
-          this_mask_array.mask_by_id(iii, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = ce.ceid(cccc);%TIMECLUSTERS(indx).ceid(iii);
-          maskArrays.all.mask_by_id(tindx, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = indx;
-          maskArrays.all.mask_by_id_with_accumulation(tindx2, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = indx;
+            this_mask_array.mask_by_id(iii, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = ce.ceid(cccc);%TIMECLUSTERS(indx).ceid(iii);
+            maskArrays.all.mask_by_id(tindx, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = indx;
+            maskArrays.all.mask_by_id_with_accumulation(tindx2, ce.pixels(cccc).y(iiii), ce.pixels(cccc).x(iiii)) = indx;
 
+          end
         end
-      end
-    end % for loop over CEs for this LPT
+      end % for loop over CEs for this LPT
 
-  end % for loop over timecluster entries
+    end % for loop over timecluster entries
 
 
-  this_mask_array.mask_by_id_with_filter = ...
-    feature_spread(this_mask_array.mask_by_id, np);
+    this_mask_array.mask_by_id_with_filter = ...
+      feature_spread(this_mask_array.mask_by_id, np);
 
-  maskArrays.individual = [maskArrays.individual, this_mask_array];
+    maskArrays.individual = [maskArrays.individual, this_mask_array];
 
-end  % for
+  end  % for
 
-% Filter width masks: expand out from single point masks.
+  % Filter width masks: expand out from single point masks.
 
-% Filter width masks.
-% disp('  Feature spread on all file. (This may take awhile.)')
-% maskArrays.all.mask_by_id_with_filter = ...
-%     feature_spread(maskArrays.all.mask_by_id, np);
-%
-% maskArrays.all.mask_by_id_with_filter_and_accumulation = ...
-%     feature_spread(maskArrays.all.mask_by_id_with_accumulation, np);
-disp('  Feature spread on all file turned off.')
+  % Filter width masks.
+  % disp('  Feature spread on all file. (This may take awhile.)')
+  % maskArrays.all.mask_by_id_with_filter = ...
+  %     feature_spread(maskArrays.all.mask_by_id, np);
+  %
+  % maskArrays.all.mask_by_id_with_filter_and_accumulation = ...
+  %     feature_spread(maskArrays.all.mask_by_id_with_accumulation, np);
+  disp('  Feature spread on all file turned off.')
 
 end  % function
-
-
 
 
 function array_out = feature_spread(array_in, np)
 
+  s = size(array_in);
+  array_last = array_in;
+  array_out = array_in;
 
 
-s = size(array_in);
-array_last = array_in;
-array_out = array_in;
+  if (np > 0)
+    for nn = 1:np
+
+      % shift left
+      array_shift = circshift(array_last, -1, 3);
+      array_shift(:,:,s(3)) = -1;
+      array_out = max(array_out, array_shift);
+
+      % shift right
+      array_shift = circshift(array_last, 1, 3);
+      array_shift(:,:,1) = -1;
+      array_out = max(array_out, array_shift);
 
 
-if (np > 0)
-  for nn = 1:np
+      % shift down
+      array_shift = circshift(array_last, -1, 2);
+      array_shift(:,s(2),:) = -1;
+      array_out = max(array_out, array_shift);
 
-    % shift left
-    array_shift = circshift(array_last, -1, 3);
-    array_shift(:,:,s(3)) = -1;
-    array_out = max(array_out, array_shift);
+      % shift up
+      array_shift = circshift(array_last, 1, 2);
+      array_shift(:,1,:) = -1;
+      array_out = max(array_out, array_shift);
 
-    % shift right
-    array_shift = circshift(array_last, 1, 3);
-    array_shift(:,:,1) = -1;
-    array_out = max(array_out, array_shift);
+      array_last = array_out ;
 
-
-    % shift down
-    array_shift = circshift(array_last, -1, 2);
-    array_shift(:,s(2),:) = -1;
-    array_out = max(array_out, array_shift);
-
-    % shift up
-    array_shift = circshift(array_last, 1, 2);
-    array_shift(:,1,:) = -1;
-    array_out = max(array_out, array_shift);
-
-    array_last = array_out ;
-
+    end
   end
-end
 
-end  % function
+end %function
