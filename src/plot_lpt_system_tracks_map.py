@@ -6,7 +6,7 @@ import glob
 import os
 
 dir = '../data/trmm/processed/g20_72h/thresh12/timeclusters'
-out_dir = '../plots/trmm/processed/g20_72h/thresh12/timeclusters'
+out_dir = '../plots/trmm/processed/g20_72h/thresh12/systems'
 plt.close('all')
 
 os.system('mkdir -p ' + out_dir)
