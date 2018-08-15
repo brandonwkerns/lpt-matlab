@@ -16,7 +16,7 @@ for fn in glob.glob(dir+'/TIMECLUSTERS_*.lptALL.nc'):
     print(fn, flush=True)
 
     out_str = fn[-31:-10]
-    fout = (out_dir + '/lpt_timeclusters_' + out_str + '__map.png')
+    fout = (out_dir + '/lpt_system_tracks_' + out_str + '__map.png')
 
     ## Set up figure
     fig = plt.figure(figsize=(11,8))

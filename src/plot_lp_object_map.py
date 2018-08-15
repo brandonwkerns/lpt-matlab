@@ -11,8 +11,7 @@ plt.close('all')
 
 os.system('mkdir -p ' + out_dir)
 
-#for fn in sorted(glob.glob(dir+'/objects_*.nc')):
-for fn in glob.glob(dir+'/objects_*.nc'):
+for fn in sorted(glob.glob(dir+'/objects_*.nc')):
 
     print(fn, flush=True)
 
