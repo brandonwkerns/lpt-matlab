@@ -50,7 +50,7 @@ nextClusterID=1 ;  %Start time cluster ID count at 1.
 allDates=[] ;
 
 DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
-% DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN1+92;
+% DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN1+91;
 
 %%
 %% Loop forward in time.
@@ -160,8 +160,14 @@ combineCloseProximityTCs_by_area(OPT.ACCUMULATION_PERIOD/24.0) ;
 %% Now combining the merging tracks which were duplicates.
 %%
 
-%mergeDuplicateTCs() ;
-splitDuplicateTCs() ;
+if OPT.SPLITTING_AND_MERGING_METHOD == 1
+  splitDuplicateTCs_split_by_instantaneous_area() ;
+elseif OPT.SPLITTING_AND_MERGING_METHOD == 2
+  splitDuplicateTCs_maximize_accumulated_area() ;
+elseif OPT.SPLITTING_AND_MERGING_METHOD == 3
+  mergeDuplicateTCs() ;
+end
+%% Otherwise, keep each of the individual overlapping tracks.
 
 %%
 %% Take out time clusters with insufficient duration.
@@ -169,7 +175,6 @@ splitDuplicateTCs() ;
 
 % removeShortLivedTCs(3.0) ;
 removeShortLivedTCs(minDuration) ;
-
 
 TIMECLUSTERS=put_tracks_in_order(TIMECLUSTERS);
 
@@ -235,8 +240,6 @@ for ii=1:numel(TIMECLUSTERS)
 
 end
 
-
-
 fclose(fid) ;
 
 % .mat file output
@@ -244,10 +247,7 @@ fout.TIMECLUSTERS = TIMECLUSTERS ;
 fout.grid = CE.grid ;
 fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
 disp(fileout_mat)
-eval(['save ', fileout_mat, ' -struct fout'])
-
-
-
+eval(['save ', fileout_mat, ' -struct fout -v7.3'])
 
 % NetCDF output.
 
@@ -393,15 +393,15 @@ netcdf.putVar(ncid, varid_stitch_effective_radius, stitch_effective_radius);
 netcdf.putVar(ncid, varid_stitch_volrain, stitch_volrain);
 
 %% Quik diagnosis plot.
-% stitch_lon2 = stitch_lon;
-% stitch_lon2(stitch_lon < -1000) = NaN;
-% stitch_time2 = stitch_time;
-% stitch_time2(stitch_lon < -1000) = NaN;
-%
-% plot(stitch_lon2, stitch_time2);
-% datetick('y')
-% hold on
-% text(stitch_lon2,stitch_time2,cellstr(num2str(stitch_id')))
+stitch_lon2 = stitch_lon;
+stitch_lon2(stitch_lon < -1000) = NaN;
+stitch_time2 = stitch_time;
+stitch_time2(stitch_lon < -1000) = NaN;
+
+plot(stitch_lon2, stitch_time2);
+datetick('y')
+hold on
+text(stitch_lon2,stitch_time2,cellstr(num2str(stitch_id')))
 
 % masks
 if (OPT.CALC_MASK == true)
@@ -630,16 +630,14 @@ function mergeDuplicateTCs()
   %% Modifies TIMECLUSTERS
 
   still_work_to_be_done = true;
-
-  allTCindices=1:numel(TIMECLUSTERS) ;
   throwAwayTCs=[] ;
-
+  starting_ce_index = 1;
   iteration = 0;
   while still_work_to_be_done
 
     iteration = iteration + 1;
     disp(['----  iteration ',num2str(iteration),'  ----'])
-    allTCindices = 1:numel(TIMECLUSTERS) ;
+    allTCindices = starting_ce_index:numel(TIMECLUSTERS) ;
     still_work_to_be_done = false;
 
     for iiii=[allTCindices]
@@ -647,10 +645,16 @@ function mergeDuplicateTCs()
       otherTCindices=setdiff(allTCindices,iiii) ;
       thisClusterCEList=TIMECLUSTERS(iiii).ceid ;
 
+      found_a_match = false;
       for jjjj=[otherTCindices]
 
         if ( numel(intersect(TIMECLUSTERS(iiii).ceid,...
                              TIMECLUSTERS(jjjj).ceid))>0)
+
+          found_a_match = true;
+          if verbose
+            disp([num2str(jjjj), ' absorbed into ', num2str(iiii)])
+          end
 
           TIMECLUSTERS(iiii).ceid=sort(union(TIMECLUSTERS(iiii).ceid,...
                                         TIMECLUSTERS(jjjj).ceid));
@@ -664,20 +668,225 @@ function mergeDuplicateTCs()
         end
       end
 
+      % If I get to this point, it means there were no overlapping tracks.
+      % so, no need to check this track over and over again.
+      if ~found_a_match
+        starting_ce_index = iiii+1;
+      end
+
       if (still_work_to_be_done)
         break
       end
 
+
     end
 
   end
-  % Throw away the tagged TIMECLUSTERS
+  %%% Throw the flagged tracks away.
+  throwAwayTCs = unique(throwAwayTCs);
+  if verbose & numel(throwAwayTCs) > 0
+    disp(['Removed the following due to being completely absorbed in merging step: ',num2str(throwAwayTCs)])
+    disp(['(Database also re-ordered.)'])
+  end
   TIMECLUSTERS(throwAwayTCs)=[] ;
 
 end
 
 
-function splitDuplicateTCs()
+function splitDuplicateTCs_split_by_instantaneous_area()
+
+  %% Accesses main function variables: TIMECLUSTERS
+  %% Modifies TIMECLUSTERS
+  %%
+  %% When two timecluster tracks merge, only keep the one with the
+  %% longer history in terms of accumulated added area.
+
+  still_work_to_be_done = true;
+  throwAwayTCs = [];
+
+  iteration = 0;
+  starting_ce_index = 1;
+  while still_work_to_be_done
+
+    iteration = iteration + 1;
+    disp(['----  iteration ',num2str(iteration),'  ----'])
+    % allTCindices = 1:numel(TIMECLUSTERS) ;
+    allTCindices = starting_ce_index:numel(TIMECLUSTERS) ;
+
+    for iiii = [allTCindices]
+
+      still_work_to_be_done = false;
+      if (numel(TIMECLUSTERS(iiii).ceid) < 1)
+        starting_ce_index = iiii + 1;
+        continue
+      end
+      otherTCindices=setdiff(allTCindices,iiii) ;
+
+      intersectingTCindices = [];
+      intersectingTCbeginning_times = [];
+      intersecting_times = [];
+
+      for kk = TIMECLUSTERS(iiii).ceid
+        intersecting_times = [intersecting_times, CE.time(TIMECLUSTERS(iiii).ceid)];
+      end
+      for jjjj = [otherTCindices]
+        intersections=intersect(TIMECLUSTERS(iiii).ceid,...
+                                TIMECLUSTERS(jjjj).ceid);
+        if (numel(intersections) > 0)
+          intersectingTCindices = [intersectingTCindices, jjjj];
+          intersectingTCbeginning_times = [intersectingTCbeginning_times, CE.time(TIMECLUSTERS(jjjj).ceid(1))];
+          intersecting_times = [intersecting_times, CE.time(TIMECLUSTERS(jjjj).ceid)];
+        end
+      end
+
+      intersecting_times = sort(intersecting_times);
+      [intersectingTCbeginning_times, intersectingTCbeginning_times_indx] = sort(intersectingTCbeginning_times);
+      intersectingTCindices = intersectingTCindices(intersectingTCbeginning_times_indx);
+      if numel(intersectingTCindices) > 0
+        if verbose
+          disp([num2str(iiii), ' overlaps: ', num2str(intersectingTCindices)])
+        end
+
+        for jjjj = intersectingTCindices
+          intersections=intersect(TIMECLUSTERS(iiii).ceid,...
+                                  TIMECLUSTERS(jjjj).ceid);
+
+      	  if (numel(intersections) < 1)
+      	    continue
+      	  end
+
+          % Check if I have an overlapping/duplicate track here.
+          if (numel(setxor(intersections, TIMECLUSTERS(iiii).ceid)) < 1)
+            if verbose
+              disp(['Duplicate! Will throw away ID=',num2str(iiii)])
+            end
+            throwAwayTCs = [throwAwayTCs, iiii];
+            TIMECLUSTERS(iiii).ceid = [];
+            continue
+          end
+          if (numel(setxor(intersections, TIMECLUSTERS(jjjj).ceid)) < 1)
+            if verbose
+              disp(['Duplicate! Will throw away ID=',num2str(jjjj)])
+            end
+            throwAwayTCs = [throwAwayTCs, jjjj];
+            TIMECLUSTERS(jjjj).ceid = [];
+            continue
+          end
+
+          %% "split" track portion, if it exists.
+          %% (If no split, nothing happens here.)
+          split_point_ceid = -999;
+          for ll = [TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid >= min(intersections))]
+            if sum(intersections == ll) > 0
+              split_point_ceid = ll;
+            else
+              break;
+            end
+          end
+      	  if split_point_ceid < 1
+            for ll = [TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid >= min(intersections))]
+              if sum(intersections == ll) > 0
+                split_point_ceid = ll;
+              else
+                break;
+              end
+            end
+      	  end
+          indices1 = TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid > split_point_ceid);
+          indices2 = TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid > split_point_ceid);
+
+
+          if (numel(indices1) < 1 | numel(indices2) < 1)
+            if verbose
+              disp('No split. Moving on.')
+            end
+          else
+            if CE.area(indices1(1)) > CE.area(indices2(1))
+              startNewTimeCluster(nextClusterID) ;
+              if ( verbose > 0 )
+                disp(['        A track split off (ID=',num2str(jjjj),').'])
+                disp(['        + Split portion is a new time cluster: ID = ',num2str(nextClusterID)])
+              end
+              TIMECLUSTERS(nextClusterID).ceid=...
+                  TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid > split_point_ceid);
+              nextClusterID = nextClusterID + 1 ;
+              TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid > split_point_ceid)=[];
+              %break
+            else
+              startNewTimeCluster(nextClusterID) ;
+              if ( verbose > 0 )
+                disp(['        A track split off (ID=',num2str(iiii),').'])
+                disp(['        + Split portion is a new time cluster: ID = ',num2str(nextClusterID)])
+              end
+              TIMECLUSTERS(nextClusterID).ceid=...
+                  TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid > split_point_ceid);
+              nextClusterID = nextClusterID + 1 ;
+              TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid > split_point_ceid)=[];
+              %break
+            end
+          end
+
+          %% "merge" track portion, if it exists.
+          %% (If no merge, nothing happens here.)
+
+          indices11 = TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid < min(intersections));
+          indices22 = TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid < min(intersections));
+
+          if (numel(indices11) < 1 | numel(indices22) < 1)
+            if verbose
+              disp('No merger. Moving on.')
+            end
+          else
+            accum_area1 = 0.0;
+            for idx = [indices11]
+              accum_area1 = accum_area1 + CE.area(idx);
+            end
+            accum_area2 = 0.0;
+            for idx = [indices22]
+              accum_area2 = accum_area2 + CE.area(idx);
+            end
+
+            if accum_area1 > accum_area2
+              if verbose
+                disp(['  Merger --> ', num2str(iiii), ' wins,', num2str(jjjj),' cut short.'])
+              end
+              TIMECLUSTERS(jjjj).ceid=indices22;
+              %break
+            else
+              if verbose
+                disp(['  Merger --> ', num2str(jjjj), ' wins,', num2str(iiii),' cut short.'])
+              end
+              TIMECLUSTERS(iiii).ceid=indices11;
+              %break
+            end
+          end
+        end
+
+        %% If these tracks are duplicates, mark the second entry for removal.
+        still_work_to_be_done = true;
+        break
+      else
+        starting_ce_index = iiii + 1;
+      end %if numel(intersectingTCindices) > 0
+
+      if still_work_to_be_done
+        break
+      end
+    end %for iiii=[allTCindices]
+  end %while still_work_to_0be_done
+
+  %%% Throw the flagged tracks away.
+  throwAwayTCs = unique(throwAwayTCs);
+  if verbose & numel(throwAwayTCs) > 0
+    disp(['Removed the following due to being completely absorbed in merging step: ',num2str(throwAwayTCs)])
+    disp(['(Database also re-ordered.)'])
+  end
+  TIMECLUSTERS(throwAwayTCs)=[] ;
+
+end
+
+
+function splitDuplicateTCs_maximize_accumulated_area()
 
   %% Accesses main function variables: TIMECLUSTERS
   %% Modifies TIMECLUSTERS
@@ -819,6 +1028,10 @@ function splitDuplicateTCs()
   TIMECLUSTERS(throwAwayTCs)=[] ;
 
 end
+
+
+
+
 
 
 function removeShortLivedTCs(minduration) ;
