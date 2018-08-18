@@ -66,7 +66,7 @@ fprintf(fid_wpac_lpts, '%s\n', header);
 fprintf(fid_non_east_propagating_lpts, '%s\n', header);
 
 
-for year1=1998:2017  ;
+for year1=2015:2016 %1997:2017  ;
 
     year2=year1+1 ;
 
@@ -200,85 +200,83 @@ for year1=1998:2017  ;
       keep_going = 1;
       niter = 0;
       maxiter = 10;
-      while(keep_going)
-    	niter = niter + 1;
-    	old_mask_net_eastward_propagation = mask_net_eastward_propagation;
+        while(keep_going)
+      	niter = niter + 1;
+      	old_mask_net_eastward_propagation = mask_net_eastward_propagation;
 
-		  % Let easterly propagation periods eat westerly jogs
+  		  % Let easterly propagation periods eat westerly jogs
         statsE=regionprops(mask_net_eastward_propagation, 'all') ;
         statsW=regionprops(~mask_net_eastward_propagation, 'all') ;
 
-	for jjj = 1:numel(statsW)
+      	for jjj = 1:numel(statsW)
 
-	  indxW = statsW(jjj).SubarrayIdx{2};
+      	  indxW = statsW(jjj).SubarrayIdx{2};
 
-			%Find the adjacent eastward propagating areas.
-	  indx_before = min(indxW) - 1;
-	  if (indx_before < 1)
-	    continue
-	  end
-	  for jjj_before = 1:numel(statsE)
-	    if (sum(statsE(jjj_before).SubarrayIdx{2} == indx_before) > 0)
-	      break
-	    end
-	  end
-	  jjj_after = jjj_before + 1;
-	  if (jjj_after > numel(statsE))
-	    continue
-	  end
+      			%Find the adjacent eastward propagating areas.
+      	  indx_before = min(indxW) - 1;
+      	  if (indx_before < 1)
+      	    continue
+      	  end
+      	  for jjj_before = 1:numel(statsE)
+      	    if (sum(statsE(jjj_before).SubarrayIdx{2} == indx_before) > 0)
+      	      break
+      	    end
+      	  end
+      	  jjj_after = jjj_before + 1;
+      	  if (jjj_after > numel(statsE))
+      	    continue
+      	  end
 
-	      % If "area" (e.g., duration) of statsW is less than both
-	      % "areas" of statsE, then eat it.
-	  if (statsW(jjj).Area <= statsE(jjj_before).Area && ...
-	      statsW(jjj).Area <= statsE(jjj_after).Area)
-	    mask_net_eastward_propagation(indxW) = 1;
-	  end
-	end
+      	      % If "area" (e.g., duration) of statsW is less than both
+      	      % "areas" of statsE, then eat it.
+      	  if (statsW(jjj).Area <= statsE(jjj_before).Area && ...
+      	      statsW(jjj).Area <= statsE(jjj_after).Area)
+      	    mask_net_eastward_propagation(indxW) = 1;
+      	  end
+      	end
 
 
 	      % Let westerly propagation periods eat easterly jogs
         statsE=regionprops(mask_net_eastward_propagation, 'all') ;
         statsW=regionprops(~mask_net_eastward_propagation, 'all') ;
 
-	for jjj = 1:numel(statsE)
+      	for jjj = 1:numel(statsE)
 
-	  indxE = statsE(jjj).SubarrayIdx{2};
+      	  indxE = statsE(jjj).SubarrayIdx{2};
 
-			%Find the adjacent eastward propagating areas.
-	  indx_before = min(indxE) - 1;
-	  if (indx_before < 1)
-	    continue
-	  end
-	  for jjj_before = 1:numel(statsW)
-	    if (sum(statsW(jjj_before).SubarrayIdx{2} == indx_before) > 0)
-	      break
-	    end
-	  end
-	  jjj_after = jjj_before + 1;
-	  if (jjj_after > numel(statsW))
-	    continue
-	  end
+      			%Find the adjacent eastward propagating areas.
+      	  indx_before = min(indxE) - 1;
+      	  if (indx_before < 1)
+      	    continue
+      	  end
+      	  for jjj_before = 1:numel(statsW)
+      	    if (sum(statsW(jjj_before).SubarrayIdx{2} == indx_before) > 0)
+      	      break
+      	    end
+      	  end
+      	  jjj_after = jjj_before + 1;
+      	  if (jjj_after > numel(statsW))
+      	    continue
+      	  end
 
-	      % If "area" (e.g., duration) of statsW is less than both
-	      % "areas" of statsE, then eat it.
-	  if (statsE(jjj).Area <= statsW(jjj_before).Area && ...
-	      statsE(jjj).Area <= statsW(jjj_after).Area)
-	    mask_net_eastward_propagation(indxE) = 0;
-	  end
-	end
+      	      % If "area" (e.g., duration) of statsW is less than both
+      	      % "areas" of statsE, then eat it.
+      	  if (statsE(jjj).Area <= statsW(jjj_before).Area && ...
+      	      statsE(jjj).Area <= statsW(jjj_after).Area)
+      	    mask_net_eastward_propagation(indxE) = 0;
+      	  end
+      	end
 
-	check = (mask_net_eastward_propagation ~= old_mask_net_eastward_propagation);
-	if (sum(check) == 0)
-	  keep_going = 0;
-	  disp(['Finished in ',num2str(niter),' iterations.'])
-	end
+      	check = (mask_net_eastward_propagation ~= old_mask_net_eastward_propagation);
+      	if (sum(check) == 0)
+      	  keep_going = 0;
+      	  disp(['Finished in ',num2str(niter),' iterations.'])
+      	end
 
-	if (niter > maxiter)
-	  disp(['Warning: exceeded ',num2str(maxiter),' iterations! Stopping.'])
-	  break
-	end
-
-
+      	if (niter > maxiter)
+      	  disp(['Warning: exceeded ',num2str(maxiter),' iterations! Stopping.'])
+      	  break
+      	end
       end
 
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -353,16 +351,16 @@ for year1=1998:2017  ;
         frac_east_moving=1.0*count_east_moving / (GG.nentries-1);
         east_west_moving_ratio=dist_east_moving / dist_west_moving ;
 
-	%% In this version, instead of just using eastward prop time, use entire LPT time.
-	%if (idx_begin_east_prop > 0)
-        %  [max_east_lon, max_east_lon_idx]=max(GG.lon(idx_begin_east_prop:idx_end_east_prop)) ;
-        %  [min_west_lon, min_west_lon_idx]=min(GG.lon(idx_begin_east_prop:idx_end_east_prop)) ;
-	%else
-          [max_east_lon, max_east_lon_idx]=max(GG.lon) ;
-          [min_west_lon, min_west_lon_idx]=min(GG.lon) ;
-	%end
+	      %% In this version, instead of just using eastward prop time, use entire LPT time.
+        if (idx_begin_east_prop > 0)
+          [min_west_lon, min_west_lon_idx]=min(GG.lon(1:idx_end_east_prop)) ;
+          [max_east_lon, max_east_lon_idx]=max(GG.lon(idx_begin_east_prop:end)) ;
+        else
+          min_west_lon = NaN;
+          max_east_lon = NaN;
+      	end
 
-	min_dist_to_eq = min(abs(GG.lat));
+        min_dist_to_eq = min(abs(GG.lat));
 
         %% ENSO
         [y,m,d,h]=datevec(GG.time(1));
@@ -371,9 +369,9 @@ for year1=1998:2017  ;
             nino34.three_months.time == datenum(y,m,1,0,0,0) ) ;
 
         SSTA=nino34.three_months.ssta(findThisMonth) ;
-	if (numel(SSTA) == 0)
-	  SSTA = NaN;
-	end
+      	if (numel(SSTA) == 0)
+      	  SSTA = NaN;
+      	end
 
         if (GG.duration > min_duration-0.001)
 
