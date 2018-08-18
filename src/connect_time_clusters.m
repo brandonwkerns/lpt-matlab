@@ -50,7 +50,7 @@ nextClusterID=1 ;  %Start time cluster ID count at 1.
 allDates=[] ;
 
 DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
-% DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN1+91;
+% DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN1+31;
 
 %%
 %% Loop forward in time.
@@ -242,13 +242,6 @@ end
 
 fclose(fid) ;
 
-% .mat file output
-fout.TIMECLUSTERS = TIMECLUSTERS ;
-fout.grid = CE.grid ;
-fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
-disp(fileout_mat)
-eval(['save ', fileout_mat, ' -struct fout -v7.3'])
-
 % NetCDF output.
 
 %%
@@ -393,15 +386,15 @@ netcdf.putVar(ncid, varid_stitch_effective_radius, stitch_effective_radius);
 netcdf.putVar(ncid, varid_stitch_volrain, stitch_volrain);
 
 %% Quik diagnosis plot.
-stitch_lon2 = stitch_lon;
-stitch_lon2(stitch_lon < -1000) = NaN;
-stitch_time2 = stitch_time;
-stitch_time2(stitch_lon < -1000) = NaN;
-
-plot(stitch_lon2, stitch_time2);
-datetick('y')
-hold on
-text(stitch_lon2,stitch_time2,cellstr(num2str(stitch_id')))
+% stitch_lon2 = stitch_lon;
+% stitch_lon2(stitch_lon < -1000) = NaN;
+% stitch_time2 = stitch_time;
+% stitch_time2(stitch_lon < -1000) = NaN;
+%
+% plot(stitch_lon2, stitch_time2);
+% datetick('y')
+% hold on
+% text(stitch_lon2,stitch_time2,cellstr(num2str(stitch_id')))
 
 % masks
 if (OPT.CALC_MASK == true)
@@ -529,6 +522,35 @@ if (OPT.CALC_MASK == true)
 
   end
 end
+
+
+
+
+% .mat file output
+% If "TIMECLUSTERS" is > 2 GB, need to break it up.
+break_up_point = -1;
+sum_of_mb = 0.0;
+for tt = 1:numel(TIMECLUSTERS)
+  TCtemp = TIMECLUSTERS(tt);
+  stats = whos('TCtemp');
+  sum_of_mb = sum_of_mb + stats.bytes/1024/1024;
+  if (sum_of_mb > 2000.0)
+    break_up_point = tt-1;
+    break
+  end
+end
+
+if break_up_point < 0
+  fout.TIMECLUSTERS = TIMECLUSTERS ;
+else
+  disp('Data larger than 2 GB! Broken up in to TIMECLUSTERS and TIMECLUSTERS2.')
+  fout.TIMECLUSTERS = TIMECLUSTERS(1:break_up_point) ;
+  fout.TIMECLUSTERS2 = TIMECLUSTERS(break_up_point+1:end) ;
+end
+fout.grid = CE.grid ;
+fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
+disp(fileout_mat)
+eval(['save ', fileout_mat, ' -struct fout'])
 
 disp('Done.')
 
