@@ -97,4 +97,17 @@ TRACKING_MAX_DIST_TO_CONNECT = 20.0; % Max distance between consecutive frames c
 % Tracks that do not last at least this many hours will be discarded.
 % NOTE: the pyhsical time scale is TRACKING_MINIMUM_DURATION + ACCUMULATION_PERIOD
 %       due to the accumulation period.
-TRACKING_MINIMUM_DURATION = 96;
+TRACKING_MINIMUM_DURATION = 168;
+
+%% Track splitting and merging method.
+%%
+%% 1 = KC16 method. For mergers, choose the previous track with longest areal accumulation history.
+%%     And for splits, follow the system with the largest area at the time of the split.
+%%     (Results in more spatially continuous tracks).
+%% 2 = Separate tracks, keep together the track with largest accumulated area in time.
+%%     (Results in longer tracked systems, but tends to be more jumpy in time).
+%% 3 = DO NOT split or merge. Combine multiple CEs at the same time.
+%%     Same as the Chen et al. (1996) "timeclusters" method for 208 K cloud clusters.
+%% 4 = DO NOT split or merge. Keep duplicate copies of the tracks where they merge/split.
+%%
+SPLITTING_AND_MERGING_METHOD = 1;
