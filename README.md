@@ -84,7 +84,7 @@ THRESH        for example thresh12 for 12 mm/day threshold.
 
 5) Run the feature identification script.
 
-   Script: connect_objects.m
+   Script: identify_objects.m
    --> Outputs will be text, mat, and nc files named "data/CASE_LABEL/processed/FILTER_ACCUM/THRESH/objects_*"
 
 
