@@ -1,33 +1,22 @@
 clear all
 close all
 
-YEAR1=1998;
-YEAR2=1999;
-addpath('../config')
-options
-
-PROCESSED_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
-                      'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
-                       sprintf('%d',ACCUMULATION_PERIOD), ...
-                       'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
-
-PLOT_DIR = ['../plots/',CASE_LABEL,'/processed/',...
-                      'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
-                       sprintf('%d',ACCUMULATION_PERIOD), ...
-                       'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/systems'];
-
-
-
-
 figure('visible','off')
 set(gcf,'position',[100,100,500,800])
 set(gcf,'color','w')
 
 corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 
- for year1=[2017]
+%% Read TCs
+ibtracs_file = 'Allstorms.ibtracs_wmo.v03r10.nc';
+ibtracs.lon = ncread(ibtracs_file,'lon_wmo');
+ibtracs.lat = ncread(ibtracs_file,'lat_wmo');
+ibtracs.raw_time = ncread(ibtracs_file,'time_wmo'); % days since 1858-11-17 00:00:00
+ibtracs.dn = ibtracs.raw_time + datenum(1858,11,17,0,0,0);
+
+for year1=[1998]
 % for year1=[1999:2016]
-%for year1=[1998:2016]
+% for year1=[2017]
 
     clf
 
@@ -39,53 +28,14 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
     yyyy2=num2str(year2) ;
 
     y1_y2=[yyyy1,'_',yyyy2] ;
-    % y11_y22=[yyyy1,'010400_',yyyy2,'063021'] ;
-    y11_y22=[yyyy1,'060100_',yyyy2,'063021'] ;
+    y11_y22=[yyyy1,'010400_',yyyy2,'063021'] ;
+    % y11_y22=[yyyy1,'060100_',yyyy2,'063021'] ;
     % y11_y22=[yyyy1,'060100_',yyyy2,'053121'] ;
 
     disp(y1_y2) ;
 
     F=load(['../data/trmm/interim/timelon/rain_hov_',y1_y2,'_15deg_3day_full_year.mat']) ;
-    G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.mat']) ;
-
-    if isfield(G, 'TIMECLUSTERS2')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS2];
-    end
-    if isfield(G, 'TIMECLUSTERS3')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS3];
-    end
-    if isfield(G, 'TIMECLUSTERS4')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS4];
-    end
-    if isfield(G, 'TIMECLUSTERS5')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS5];
-    end
-    if isfield(G, 'TIMECLUSTERS6')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS6];
-    end
-    if isfield(G, 'TIMECLUSTERS7')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS7];
-    end
-    if isfield(G, 'TIMECLUSTERS8')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS8];
-    end
-    if isfield(G, 'TIMECLUSTERS9')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS9];
-    end
-    if isfield(G, 'TIMECLUSTERS10')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS10];
-    end
-    if isfield(G, 'TIMECLUSTERS11')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS11];
-    end
-    if isfield(G, 'TIMECLUSTERS12')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS12];
-    end
-
-
-
-
-
+    G=load(['../data/trmm/processed/g20_72h/thresh12/timeclusters/TIMECLUSTERS_lpt_',y11_y22,'.mat']) ;
 
     F.rain=F.rain/24 ;
     %F.rain(F.rain < 0.25) = NaN ;
@@ -120,7 +70,7 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
         end
 
         GG=G.TIMECLUSTERS(ii) ;
-        GG.date=GG.time; %-1.5 ;
+        GG.date=GG.time-1.5 ;
         GG.size=sqrt(GG.area) ;
         GG.area=GG.area/1e4 ;
         GG.nentries=numel(GG.date) ;
@@ -142,9 +92,15 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 	end
 
 	text(GG.lon(1), GG.time(1), num2str(ii),'clipping','on');
-  text(GG.lon(end), GG.time(end), num2str(ii),'clipping','on');
 
     end
+
+
+
+
+    %% Draw TC Tracks
+    plot(ibtracs.lon, ibtracs.dn, 'm^','markersize',3);
+
 
     TICKS=[datenum(year1,6,1,0,0,0):10:datenum(year2,6,1,0,0,0)];
     set(gca,'YTick',TICKS) ;
@@ -162,7 +118,7 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 
 
     set(gca,'xtick', 40:10:180) ;
-    % axis([40,180,datenum(year1,11,1,0,0,0),datenum(year2,2,1,0,0,0)])
+    % axis([40,180,datenum(year1,6,1,0,0,0),datenum(year1,8,1,0,0,0)])
 
 
     set(gca,'layer','top')
@@ -172,11 +128,11 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
     title(['Rainfall and LPT: June ',yyyy1,' - May ',yyyy2])
 
     text(0.02,0.97,corner_label,'units','normalized', 'fontweight','bold')
+    % plot(0.02, 0.94, 'b^', 'markerfacecolor','b','units','normalized');
+    text(0.02,0.92,'Best Track TC','color','m','units','normalized', 'fontweight','bold')
 
-    fileOutBase=['rain_filter_track_hov_',y1_y2,'_wide_15deg_3day_black'];
+    fileOutBase=['rain_filter_track_hov_',y1_y2,'_wide_15deg_3day_black_with_TCs'];
 
-    eval(['!mkdir -p ',PLOT_DIR])
-    disp([PLOT_DIR,'/',fileOutBase,'.png'])
-    saveas(gcf,[PLOT_DIR,'/',fileOutBase,'.png'])
+    saveas(gcf,[fileOutBase,'.png'])
 
 end

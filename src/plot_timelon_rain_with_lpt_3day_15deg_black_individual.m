@@ -1,8 +1,7 @@
 clear all
 close all
 
-YEAR1=1998;
-YEAR2=1999;
+
 addpath('../config')
 options
 
@@ -25,7 +24,7 @@ set(gcf,'color','w')
 
 corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 
- for year1=[2017]
+ for year1=[2003]
 % for year1=[1999:2016]
 %for year1=[1998:2016]
 
@@ -51,76 +50,44 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
     if isfield(G, 'TIMECLUSTERS2')
       G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS2];
     end
-    if isfield(G, 'TIMECLUSTERS3')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS3];
-    end
-    if isfield(G, 'TIMECLUSTERS4')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS4];
-    end
-    if isfield(G, 'TIMECLUSTERS5')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS5];
-    end
-    if isfield(G, 'TIMECLUSTERS6')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS6];
-    end
-    if isfield(G, 'TIMECLUSTERS7')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS7];
-    end
-    if isfield(G, 'TIMECLUSTERS8')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS8];
-    end
-    if isfield(G, 'TIMECLUSTERS9')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS9];
-    end
-    if isfield(G, 'TIMECLUSTERS10')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS10];
-    end
-    if isfield(G, 'TIMECLUSTERS11')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS11];
-    end
-    if isfield(G, 'TIMECLUSTERS12')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS12];
-    end
-
-
-
-
-
 
     F.rain=F.rain/24 ;
     %F.rain(F.rain < 0.25) = NaN ;
     F.rain(F.rain < 0.35) = NaN ;
-
-
-    hold on
-
     DATA=log(F.rain) ;
 
-    pcolor(F.lon,F.time-3.0,DATA) ;
-    hold on
-
-
-    shading flat
-    %caxis([log(0.2),log(5)])
-    caxis([log(0.35),log(2)])
-
-    cmap=dlmread('cmap_rain.dat') ;
-    colormap(cmap(9:end,:))
-
-
-    axis([40,180,datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)])
 
 
     alreadyPlottedList=[-1] ;
 
     for ii=1:numel(G.TIMECLUSTERS)
 
-        if ( numel(find(alreadyPlottedList == ii)) > 0 )
+
+      if ( numel(find(alreadyPlottedList == ii)) > 0 )
             continue
         end
 
+        clf;
+
+        pcolor(F.lon,F.time-3.0,DATA) ;
+        hold on
+
+
+        shading flat
+        %caxis([log(0.2),log(5)])
+        caxis([log(0.35),log(2)])
+
+        cmap=dlmread('cmap_rain.dat') ;
+        colormap(cmap(9:end,:))
+
+
+        axis([40,180,datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)])
+
+
+
+
         GG=G.TIMECLUSTERS(ii) ;
-        GG.date=GG.time; %-1.5 ;
+        GG.date=GG.time-1.5 ;
         GG.size=sqrt(GG.area) ;
         GG.area=GG.area/1e4 ;
         GG.nentries=numel(GG.date) ;
@@ -143,8 +110,6 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 
 	text(GG.lon(1), GG.time(1), num2str(ii),'clipping','on');
   text(GG.lon(end), GG.time(end), num2str(ii),'clipping','on');
-
-    end
 
     TICKS=[datenum(year1,6,1,0,0,0):10:datenum(year2,6,1,0,0,0)];
     set(gca,'YTick',TICKS) ;
@@ -173,10 +138,11 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 
     text(0.02,0.97,corner_label,'units','normalized', 'fontweight','bold')
 
-    fileOutBase=['rain_filter_track_hov_',y1_y2,'_wide_15deg_3day_black'];
+    fileOutBase=['rain_filter_track_hov_',y1_y2,'_wide_15deg_3day_black__',sprintf('%03d',ii)];
 
     eval(['!mkdir -p ',PLOT_DIR])
     disp([PLOT_DIR,'/',fileOutBase,'.png'])
     saveas(gcf,[PLOT_DIR,'/',fileOutBase,'.png'])
 
+  end
 end
