@@ -65,8 +65,8 @@ fi_initialize: can't properly open file ../data/interim/filtered/rain_filtered_2
 
 4) Run the spatial filtering script.
 
-   Script: src/gaussSmooth.m (master)   --> .nc files
-   Dependency: src/gaussSmoothKernel.m (function dependency--don't run this!)
+   Script: src/calc_rain_filter.m (master) --> .nc files
+   Dependencies: src/gaussSmooth.m, src/gaussSmoothKernel.m (function dependency--don't run these on command line!)
 
 
 5) Run the feature identification script.
