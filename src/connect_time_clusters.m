@@ -124,6 +124,8 @@ for dn=[DN]
         %  mergeDuplicateTCs() or splitDuplicateTCs().
         %
         for iii=1:numel(matchingClusterID)
+          %% If two or more objects match to an LPT, I have a split.
+          %% At this stage, split tracks will retain the full history of the previous track.
           if (sum(matchingClusterID(iii) == already_matched_tc_list) > 0)
             startNewTimeCluster(nextClusterID) ;
             for checkThisCeid = [TIMECLUSTERS(matchingClusterID(iii)).ceid]
@@ -132,7 +134,7 @@ for dn=[DN]
               end
             end
             addCluster(nextClusterID, thisCE) ;
-            disp(['        + Copied to new overlapping time cluster: ID = ',num2str(nextClusterID)])
+            disp(['        + Split! Copied to new overlapping time cluster: ID = ',num2str(nextClusterID)])
             nextClusterID = nextClusterID + 1 ;
           else
             addCluster(matchingClusterID(iii),thisCE) ;
@@ -175,7 +177,7 @@ end
 
 % removeShortLivedTCs(3.0) ;
 removeShortLivedTCs(minDuration) ;
-
+TIMECLUSTERS = eliminate_duplicate_tracks(TIMECLUSTERS, verbose);
 TIMECLUSTERS=put_tracks_in_order(TIMECLUSTERS);
 
 
@@ -528,6 +530,17 @@ end
 
 % .mat file output
 % If "TIMECLUSTERS" is > 2 GB, need to break it up.
+
+sum_of_mb = 0.0;
+for tt = 1:numel(TIMECLUSTERS)
+  TCtemp = TIMECLUSTERS(tt);
+  stats = whos('TCtemp');
+  sum_of_mb = sum_of_mb + stats.bytes/1024/1024;
+end
+
+disp(['Total TIMECLUSTERS size: ',num2str(sum_of_mb),' MB.'])
+
+
 break_up_point = -1;
 sum_of_mb = 0.0;
 for tt = 1:numel(TIMECLUSTERS)
@@ -547,6 +560,63 @@ else
   fout.TIMECLUSTERS = TIMECLUSTERS(1:break_up_point) ;
   fout.TIMECLUSTERS2 = TIMECLUSTERS(break_up_point+1:end) ;
 end
+
+
+if isfield(fout, 'TIMECLUSTERS2')
+
+  TIMECLUSTERS2 = fout.TIMECLUSTERS2;
+
+  break_up_point = -1;
+  sum_of_mb = 0.0;
+  for tt = 1:numel(TIMECLUSTERS2)
+    TCtemp = TIMECLUSTERS2(tt);
+    stats = whos('TCtemp');
+    sum_of_mb = sum_of_mb + stats.bytes/1024/1024;
+    if (sum_of_mb > 2000.0)
+      break_up_point = tt-1;
+      break
+    end
+  end
+
+  if break_up_point < 0
+    fout.TIMECLUSTERS2 = TIMECLUSTERS2 ;
+  else
+    disp('Data larger than 2 GB! Broken up in to TIMECLUSTERS2 and TIMECLUSTERS3.')
+    fout.TIMECLUSTERS2 = TIMECLUSTERS2(1:break_up_point) ;
+    fout.TIMECLUSTERS3 = TIMECLUSTERS2(break_up_point+1:end) ;
+  end
+
+end
+
+
+if isfield(fout, 'TIMECLUSTERS3')
+
+  TIMECLUSTERS3 = fout.TIMECLUSTERS3;
+
+  break_up_point = -1;
+  sum_of_mb = 0.0;
+  for tt = 1:numel(TIMECLUSTERS3)
+    TCtemp = TIMECLUSTERS3(tt);
+    stats = whos('TCtemp');
+    sum_of_mb = sum_of_mb + stats.bytes/1024/1024;
+    if (sum_of_mb > 2000.0)
+      break_up_point = tt-1;
+      break
+    end
+  end
+
+  if break_up_point < 0
+    fout.TIMECLUSTERS3 = TIMECLUSTERS3 ;
+  else
+    disp('Data larger than 2 GB! Broken up in to TIMECLUSTERS3 and TIMECLUSTERS4.')
+    fout.TIMECLUSTERS3 = TIMECLUSTERS3(1:break_up_point) ;
+    fout.TIMECLUSTERS4 = TIMECLUSTERS3(break_up_point+1:end) ;
+  end
+
+end
+
+
+
 fout.grid = CE.grid ;
 fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
 disp(fileout_mat)
@@ -1136,14 +1206,19 @@ function combineCloseProximityTCs_by_area(maxCombineTimeDiff) ;
             nHits/numel(X2) > OPT.TRACKING_MINIMUM_OVERLAP_FRAC | ...
             nHits > OPT.TRACKING_MINIMUM_OVERLAP_POINTS) )
 
-
-        TIMECLUSTERS(ii).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
-                            TIMECLUSTERS(ii_before).ceid]));
-
         if verbose
-          disp(['Combined LPTs: ',num2str(ii_before),' in to ',...
-                num2str(ii),' (',num2str(24*jumpTime),' h jump).'])
+          disp(['Combined LPTs: ',num2str(ii_before),' and ',...
+                num2str(ii),' in to ',num2str(nextClusterID), ...
+                ' (',num2str(24*jumpTime),' h, ',...
+                num2str(sqrt(dLON1.^2 + dLAT1.^2 )),' deg. jump).'])
         end
+
+        startNewTimeCluster(nextClusterID) ;
+        TIMECLUSTERS(nextClusterID).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
+                            TIMECLUSTERS(ii_before).ceid]));
+        nextClusterID = nextClusterID + 1 ;
+
+        TC_eliminate_list=[TC_eliminate_list, ii];
         TC_eliminate_list=[TC_eliminate_list, ii_before];
 
       end
@@ -1389,6 +1464,8 @@ function calcTrackingParameters() ;
 end %local function
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 function NEWTIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
 
@@ -1410,6 +1487,40 @@ end %local function
 
 
 end %% End of parent function
+
+
+
+function NEWTIMECLUSTERS = eliminate_duplicate_tracks(TIMECLUSTERS, verbose)
+
+  TC_eliminate_list = [];
+  NEWTIMECLUSTERS = TIMECLUSTERS;
+
+  for ii = 1:numel(NEWTIMECLUSTERS)
+    for jj = setxor(ii, 1:numel(NEWTIMECLUSTERS))
+
+      if (numel(NEWTIMECLUSTERS(ii).ceid) > 0 & ...
+          numel(NEWTIMECLUSTERS(jj).ceid) > 0 & ...
+          numel(NEWTIMECLUSTERS(ii).ceid) == numel(NEWTIMECLUSTERS(jj).ceid))
+
+        if sum(abs(NEWTIMECLUSTERS(ii).ceid - NEWTIMECLUSTERS(jj).ceid)) == 0
+
+          TC_eliminate_list = [TC_eliminate_list, jj];
+          NEWTIMECLUSTERS(jj).ceid = [-999];
+
+        end
+      end
+
+    end
+  end
+
+  if verbose
+    disp(['Eliminating the following duplicate tracks: ', num2str(TC_eliminate_list)])
+  end
+  NEWTIMECLUSTERS(TC_eliminate_list)=[];
+
+end
+
+
 
 
 
