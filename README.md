@@ -46,7 +46,7 @@ fi_initialize: can't properly open file ../data/interim/filtered/rain_filtered_2
 
 2) Copy a template config file to "options.m", and edit it as needed.
    --> The template "config/options.KC16.m" file has the options used for KC16.
-   --> The template "config/options.tmpa_new.m" file has the updated MJO LPT identification.
+   --> The template "config/options.trmm_template.m" file has the updated MJO LPT identification.
 
 3) get the accumulated rain data files.
 
