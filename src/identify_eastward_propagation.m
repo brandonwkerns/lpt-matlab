@@ -59,14 +59,16 @@ fid_mc_crossing_lpts=fopen([EASTWARD_PROP_DATA_DIR,'/list_mc_crossing_io_lpts.tx
 fid_non_mc_crossing_lpts=fopen([EASTWARD_PROP_DATA_DIR,'/list_non_mc_crossing_io_lpts.txt'],'w');
 fid_wpac_lpts=fopen([EASTWARD_PROP_DATA_DIR,'/list_wpac_lpts.txt'],'w');
 fid_non_east_propagating_lpts=fopen([EASTWARD_PROP_DATA_DIR,'/list_non_east_propagating_lpts.txt'],'w');
+fid_east_of_150_lpts=fopen([EASTWARD_PROP_DATA_DIR,'/list_east_of_150_lpts.txt'],'w');
 
 fprintf(fid_mc_crossing_lpts, '%s\n', header);
 fprintf(fid_non_mc_crossing_lpts, '%s\n', header);
 fprintf(fid_wpac_lpts, '%s\n', header);
 fprintf(fid_non_east_propagating_lpts, '%s\n', header);
+fprintf(fid_east_of_150_lpts, '%s\n', header);
 
 
-for year1=2015:2016 %1997:2017  ;
+for year1=1998:2017  ;
 
     year2=year1+1 ;
 
@@ -88,7 +90,15 @@ for year1=2015:2016 %1997:2017  ;
 
     dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.mat']);
     G=load([PROCESSED_DATA_DIR,'/', dir0(1).name]) ;
-
+    if isfield(G, 'TIMECLUSTERS2')
+      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS2];
+    end
+    if isfield(G, 'TIMECLUSTERS3')
+      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS3];
+    end
+    if isfield(G, 'TIMECLUSTERS4')
+      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS4];
+    end
 
     count=0 ; % Keep count of east propagating systems.
 
@@ -448,6 +458,26 @@ for year1=2015:2016 %1997:2017  ;
             end
 
 
+
+           if (  max_east_lon > 150.0 & ...
+                     GG.zonal_propagation_speed > min_zonal_speed & ...
+                     total_lon_propagation > min_total_lon_propagation & ...
+		                 min_dist_to_eq < max_abs_latitude & ...
+            		     longest_east_prop_zonal_speed > min_eastward_prop_zonal_speed & ...
+            		     longest_east_prop_duration > min_eastward_prop_duration)
+
+                fprintf(fid_east_of_150_lpts,FMT,...
+                        year1,ii,GG.duration,GG.zonal_propagation_speed,...
+                        GG.year0,GG.month0,GG.day0,GG.hour0,...
+                        GG.year1,GG.month1,GG.day1,GG.hour1,...
+                        mean(GG.volrain)*GG.duration,...
+                        100*mean(GG.volrain)*GG.duration/TOTALVOLRAIN,...
+                        SSTA, ...
+                  			idx_begin_east_prop, idx_end_east_prop, ...
+            		        longest_east_prop_zonal_speed, longest_east_prop_duration);
+
+            end
+
         end
 
     end
@@ -459,3 +489,4 @@ fclose(fid_mc_crossing_lpts);
 fclose(fid_non_mc_crossing_lpts);
 fclose(fid_wpac_lpts);
 fclose(fid_non_east_propagating_lpts);
+fclose(fid_east_of_150_lpts);
