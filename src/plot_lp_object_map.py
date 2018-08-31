@@ -5,8 +5,8 @@ from mpl_toolkits.basemap import Basemap
 import glob
 import os
 
-dir = '../data/trmm/processed/g20_72h/thresh12/objects'
-out_dir = '../plots/trmm/processed/g20_72h/thresh12/objects'
+dir = '../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/objects'
+out_dir = '../plots/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/objects'
 plt.close('all')
 
 os.system('mkdir -p ' + out_dir)
