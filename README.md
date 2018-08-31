@@ -19,19 +19,20 @@ Input files are either .mat files or NetCDF (.nc).
 Output files are .txt, .mat, and .nc.
 
 The directories are organized as follows:
-config/		    	        Configuration files.
+config/		    	       		Configuration files.
 data/
-data/raw/			Where input .mat files are copied or linked.
-data/interim/accumulated/	The intermediate rain accumulation data.
-data/interim/filtered/		The intermediate filtered rain accumulation data.
-data/processed/features/	The processed LPT "shapshot" features.
-data/processed/tracks/		The processed LPT tracks.
-plots/				Where plots get stored.
-src/				Matlab source code.
+data/CASE_LABEL/raw/			Where input .mat files are copied or linked.
+data/CASE_LABEL/interim/accumulated/	The intermediate rain accumulation data.
+data/CASE_LABEL/interim/filtered/	The intermediate filtered rain accumulation data.
+data/CASE_LABEL/processed/objects/	The processed LPT objects, e.g., "shapshots".
+data/CASE_LABEL/processed/tracks/	The processed LPT tracks.
+plots/CASE_LABEL/			Where plots get stored.
+src/					Matlab source code.
 
 #############################################################################################
 
 Here are the steps to run LPT. Recommend doing it for TRMM 3B42 (TMPA) data first.
+Run the scripts while inside of the "src" directory.
 
 Hint for viewing multiple files at once in ncview:
 You may need to set "ulimit -n 4096" or similar to see all the files at once.
@@ -40,13 +41,25 @@ you will get errors like this:
 fi_initialize: can't properly open file ../data/interim/filtered/rain_filtered_2017110512.nc.
 
 
+In the paths below, the following get replaced by whatever you specify in options.m:
+CASE_LABEL    as specified in options.m.
+FILTER        for example, g20 got 20 point Gaussian smoothing.
+ACCUM         for example, 72h.
+THRESH        for example thresh12 for 12 mm/day threshold.
+
+
 1) Clone this repository to your system.
 
+   git clone https://github.com/brandonwkerns/lpt-matlab.git 
+	-- OR --
+   On UW "orca" machine:
    git clone /home/orca/bkerns/lib/lpt/lpt-matlab -b master
+
 
 2) Copy a template config file to "options.m", and edit it as needed.
    --> The template "config/options.KC16.m" file has the options used for KC16.
    --> The template "config/options.trmm_template.m" file has the updated MJO LPT identification.
+
 
 3) get the accumulated rain data files.
 
@@ -57,25 +70,26 @@ fi_initialize: can't properly open file ../data/interim/filtered/rain_filtered_2
        Otherwise, you can write your own Matlab script.
 
        Scripts:
-       src/preprocess_tmpa.m           --> .mat files
-       src/calc_rain_accumulation.m    --> .nc files
+       preprocess_tmpa.m           --> .mat files
+       calc_rain_accumulation.m    --> .nc files
 
        (Run the scripts from within the src/ directory.)
 
 
 4) Run the spatial filtering script.
 
-   Script: src/calc_rain_filter.m (master) --> .nc files
-   Dependencies: src/gaussSmooth.m, src/gaussSmoothKernel.m (function dependency--don't run these on command line!)
+   Script: calc_rain_filter.m (master) --> .nc files
+   Dependencies: gaussSmooth.m, gaussSmoothKernel.m (function dependency--don't run these on command line!)
 
 
 5) Run the feature identification script.
 
-   Script: connect_features.m
-   --> Outputs will be named "LPT_features*"
+   Script: connect_objects.m
+   --> Outputs will be text, mat, and nc files named "data/CASE_LABEL/processed/FILTER_ACCUM/THRESH/objects_*"
+
 
 6) Run the time tracking script.
 
    Script: run_tracking.m
    Dependency: connect_time_clusters.m
-   --> Outputs will be named "LPT_tracks*"
+   --> Outputs will be text, mat, and nc files in "data/CASE_LABEL/processed/FILTER_ACCUM/THRESH/"
