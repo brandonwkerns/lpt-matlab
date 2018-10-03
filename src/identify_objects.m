@@ -56,8 +56,8 @@ HH9 = sprintf('%02d', hour9);
 ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
 allPixelList=[PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9,'.mat'] ;
 netcdf_output_fn = [PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9,'.nc'] ;
-fid=fopen([PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9],'w') ;
 eval(['!mkdir -p ',PROCESSED_DATA_DIR_OUT,'/',ymd0_ymd9]);
+fid=fopen([PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9],'w') ;
 
 % Initialize the master output struct, which will contain the
 % index for all of the cluster elements (CEs) in the same order
