@@ -257,7 +257,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
             pixels_3d(INDX_ALL,:,:) = pixels_2d;
 
             %%
-            %% Pring out text output.
+            %% Print out text output.
             %%
 
             fprintf(fid,fmt, thisLat, thisLon, ...
