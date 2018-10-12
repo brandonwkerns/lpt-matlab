@@ -27,10 +27,13 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 CLUMPS=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/clumps_of_worms.txt','',1,0);
 colors=hsv(12);
 
+%{
 MC_CROSSING=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/list_mc_crossing_io_lpts.txt','',1,0);
 NON_MC_CROSSING=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/list_non_mc_crossing_io_lpts.txt','',1,0);
 WPAC=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/list_wpac_lpts.txt','',1,0);
+%}
 
+MJO=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.txt','',1,0);
 
 % for year1=[2011]
 % for year1=[1999:2016]
@@ -138,34 +141,18 @@ for year1=[1998:2017]
     idx1 = -999;
     idx2 = -999;
 
-    if ( sum(MC_CROSSING(:,1) == year1 & ...
-             MC_CROSSING(:,2) == ii) > 0 )
+    if ( sum(MJO(:,1) == year1 & ...
+             MJO(:,2) == ii) > 0 )
 
-      idx1 = MC_CROSSING((MC_CROSSING(:,1) == year1 & ...
-	        MC_CROSSING(:,2) == ii),10);
-      idx2 = MC_CROSSING((MC_CROSSING(:,1) == year1 & ...
-	        MC_CROSSING(:,2) == ii),11);
-
-    elseif ( sum(NON_MC_CROSSING(:,1) == year1 &  ...
-                 NON_MC_CROSSING(:,2) == ii) > 0 )
-
-      idx1 = NON_MC_CROSSING((NON_MC_CROSSING(:,1) == year1 & ...
-	    NON_MC_CROSSING(:,2) == ii),10);
-      idx2 = NON_MC_CROSSING((NON_MC_CROSSING(:,1) == year1 & ...
-	    NON_MC_CROSSING(:,2) == ii),11);
-
-    elseif ( sum(WPAC(:,1) == year1 &  ...
-                 WPAC(:,2) == ii) > 0 )
-
-      idx1 = WPAC((WPAC(:,1) == year1 & ...
-	    WPAC(:,2) == ii),10);
-      idx2 = WPAC((WPAC(:,1) == year1 & ...
-	    WPAC(:,2) == ii),11);
+      idx1 = MJO((MJO(:,1) == year1 & ...
+	        MJO(:,2) == ii),9);
+      idx2 = MJO((MJO(:,1) == year1 & ...
+	        MJO(:,2) == ii),10);
 
     end
 
     if idx1 > -1
-      plot(GG.lon(idx1:idx2), GG.time(idx1:idx2)-1.5, 'k-', 'linewidth', 1.5);
+      plot(GG.lon(idx1:idx2), GG.time(idx1:idx2)-1.5, 'k-', 'linewidth', 2.0);
     end
 
   end

@@ -27,7 +27,7 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 
  for year1=[2017]
 % for year1=[1999:2016]
-%for year1=[1998:2016]
+%for year1=[1998:2017]
 
     clf
 
@@ -40,8 +40,8 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 
     y1_y2=[yyyy1,'_',yyyy2] ;
     % y11_y22=[yyyy1,'010400_',yyyy2,'063021'] ;
-    y11_y22=[yyyy1,'060100_',yyyy2,'063021'] ;
-    % y11_y22=[yyyy1,'060100_',yyyy2,'053121'] ;
+    %y11_y22=[yyyy1,'060100_',yyyy2,'063021'] ;
+     y11_y22=[yyyy1,'060100_',yyyy2,'053121'] ;
 
     disp(y1_y2) ;
 
@@ -108,7 +108,7 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
     colormap(cmap(9:end,:))
 
 
-    axis([40,180,datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)])
+    axis([40,200,datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)])
 
 
     alreadyPlottedList=[-1] ;
@@ -131,18 +131,18 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
             alreadyPlottedList=[alreadyPlottedList,ii];
             thisCol=[0.6,0.6,0.6] ;
 
-            longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],[40,180],[],thisCol,0.2) ;
+            longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],[40,200],[],thisCol,0.2) ;
 
         else
 
           thisCol='k' ;
 
-          longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],[40,180],[],thisCol,0.2) ;
+          longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],[40,200],[],thisCol,0.2) ;
 
 	end
 
-	text(GG.lon(1), GG.time(1), num2str(ii),'clipping','on');
-  text(GG.lon(end), GG.time(end), num2str(ii),'clipping','on');
+	%text(GG.lon(1), GG.time(1), num2str(ii),'clipping','on');
+	%text(GG.lon(end), GG.time(end), num2str(ii),'clipping','on');
 
     end
 
@@ -161,8 +161,8 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
     set(gca,'position',[0.15,0.05,0.8,0.8]);
 
 
-    set(gca,'xtick', 40:10:180) ;
-    % axis([40,180,datenum(year1,11,1,0,0,0),datenum(year2,2,1,0,0,0)])
+    set(gca,'xtick', 40:10:200) ;
+    % axis([40,200,datenum(year1,11,1,0,0,0),datenum(year2,2,1,0,0,0)])
 
 
     set(gca,'layer','top')

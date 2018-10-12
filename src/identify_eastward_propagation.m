@@ -2,7 +2,7 @@ clear all
 close all
 
 
-% do_plotting = true;
+%do_plotting = true;
 do_plotting = false;
 
 %% NINO 3.4 stuff.
@@ -68,7 +68,7 @@ fprintf(fid_non_east_propagating_lpts, '%s\n', header);
 fprintf(fid_east_of_150_lpts, '%s\n', header);
 
 
-for year1=1998:2017  ;
+for year1 = 1998:2017  ;
 
     year2=year1+1 ;
 
@@ -119,6 +119,9 @@ for year1=1998:2017  ;
       [GG.year0,GG.month0,GG.day0,GG.hour0]=datevec(GG.time(1)) ;
       [GG.year1,GG.month1,GG.day1,GG.hour1]=datevec(GG.time(end)) ;
 
+      disp([num2str(GG.year0),sprintf('%02d',GG.month0),sprintf('%02d',GG.day0),sprintf('%02d',GG.hour0), ...
+	   ' to ', num2str(GG.year1),sprintf('%02d',GG.month1),sprintf('%02d',GG.day1),sprintf('%02d',GG.hour1)])
+      
       %% Check if it passes within the targeted area.
       in_box = (GG.lon > search_area(1) & GG.lon < search_area(2) & ...
 	               GG.lat > search_area(3) & GG.lat < search_area(4));
@@ -165,8 +168,10 @@ for year1=1998:2017  ;
         plot(GG.time, 0.0*spd_median_filter, 'k--');
         plot(GG.time(spd_median_filter > 0), spd_median_filter(spd_median_filter > 0), 'ro','markersize',3,'markerfacecolor','r');
 
+	disp(['plots/median_filter_speed_', num2str(year1), '_', sprintf('%02d',ii), '.png'])
         saveas(gcf, ['plots/median_filter_speed_', num2str(year1), '_', sprintf('%02d',ii), '.png'])
         set(gca,'ylim',[-10.0, 10.0])
+	disp(['plots/median_filter_speed_zoomed_', num2str(year1), '_', sprintf('%02d',ii), '.png'])
         saveas(gcf, ['plots/median_filter_speed_zoomed_', num2str(year1), '_', sprintf('%02d',ii), '.png'])
       end
 
