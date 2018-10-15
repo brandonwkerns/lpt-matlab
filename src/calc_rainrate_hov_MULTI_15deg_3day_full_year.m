@@ -2,7 +2,7 @@ clear all
 close all
 
 
-for year1=[2017] %[1998:2016]
+for year1=[1998] %[1998:2016]
 
 
 year2=year1+1 ;
@@ -23,7 +23,7 @@ dateNumNow=now() ;
 dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year2,6,1,0,0,0) ;
 
 %% Set up arrays
-lon=29.875:.25:199.875 ;
+lon=0.875:.25:359.875 ;
 time=dateNum30 ;
 rain=NaN*ones(length(time),length(lon)) ;
 

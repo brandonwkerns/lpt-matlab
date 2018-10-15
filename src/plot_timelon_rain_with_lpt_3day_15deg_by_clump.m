@@ -37,7 +37,7 @@ MJO=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/ide
 
 % for year1=[2011]
 % for year1=[1999:2016]
-for year1=[1998:2017]
+for year1=[1999:2017]
 
   clf
 
