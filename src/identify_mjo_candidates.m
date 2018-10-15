@@ -47,8 +47,8 @@ min_eastward_prop_duration    = 7.0 ; % in Days. Doesn't include 3-Day accumulat
 
 min_net_lon_propagation   = -999.0 ;%20.0 ; % in deg. longitude.
 min_total_lon_propagation = -999.0 ;%20.0 ; % in deg. longitude.
-min_total_eastward_lon_propagation = 50.0 ;%20.0 ; % in deg. longitude.
-max_abs_latitude = 15.0 ;% in deg. latitude. Eastward propagation period must get this close to the Equator at some point.
+min_total_eastward_lon_propagation = 0.0 ;%20.0 ; % in deg. longitude.
+max_abs_latitude = 10.0 ;% in deg. latitude. Eastward propagation period must get this close to the Equator at some point.
 
 
 %%
@@ -78,12 +78,6 @@ for year1 = 1998:2017  ;
     y1_y2=[yyyy1,'_',yyyy2] ;
 
     disp(['########### ',y1_y2, ' ###########']) ;
-
-    %VOLRAIN=load(['../../../total_volrain_full_year/',...
-    %              'monthly_volrain_',y1_y2,'.mat']);
-
-    %TOTALVOLRAIN=sum(VOLRAIN.volrain) ;
-    TOTALVOLRAIN=100000.0 ; %HACK! This needs updated.
 
     
     dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.mat']);
@@ -122,7 +116,35 @@ for year1 = 1998:2017  ;
       meets_mjo_criteria = 0.0 * lptid_for_this_clump;
 
       n = 0;
+
+
+      %% Remove "duplicate" tracks.
+      i_remove = [];
+
+      iii = 0;
+      for ii = [lptid_for_this_clump] %   1:numel(G.TIMECLUSTERS)
+	iii = iii + 1;
+	GG=G.TIMECLUSTERS(ii) ;
+
+	[syear, smon, sday, shour] = datevec(GG.time(1));
+
+	if (syear == year1 & smon == 6 & sday == 1 & shour == 0)
+	  i_remove = unique([i_remove, iii]);
+	end
+
+	if (syear == year1+1 & smon == 6)
+	  i_remove = unique([i_remove, iii]);
+	end
+
+      end
+      lptid_for_this_clump(i_remove) = [];
       
+
+      if (numel(lptid_for_this_clump) < 1)
+	continue
+      end
+
+      %lptid_for_this_clump=[21];
       for ii = [lptid_for_this_clump] %   1:numel(G.TIMECLUSTERS)
 
 	n = n + 1;
@@ -201,7 +223,8 @@ for year1 = 1998:2017  ;
 	where_eastward_propagation2(end) = where_eastward_propagation2(end-1);
 
 
-	mask_net_eastward_propagation = where_eastward_propagation2;
+	mask_net_eastward_propagation = where_eastward_propagation2; % With median filter.
+	%mask_net_eastward_propagation = where_eastward_propagation; % Without median filter.
 
 	%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	if (do_plotting)
@@ -222,14 +245,19 @@ for year1 = 1998:2017  ;
 	end
 	%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+	% Note: from here on, use mask_net_eastward_propagation.
+	
 	keep_going = 1;
 	niter = 0;
 	maxiter = 10;
         while(keep_going)
       	  niter = niter + 1;
       	  old_mask_net_eastward_propagation = mask_net_eastward_propagation;
-	  
-  		  % Let easterly propagation periods eat westerly jogs
+
+	  %% %%%%%%%%%%%%%%%%%%%%%%%%%%%
+  	  %% Let easterly propagation periods eat westerly jogs
+	  %% %%%%%%%%%%%%%%%%%%%%%%%%%%%
           statsE=regionprops(mask_net_eastward_propagation, 'all') ;
           statsW=regionprops(~mask_net_eastward_propagation, 'all') ;
 
@@ -255,13 +283,19 @@ for year1 = 1998:2017  ;
       	      % If "area" (e.g., duration) of statsW is less than both
       	      % "areas" of statsE, then eat it.
       	    if (statsW(jjj).Area <= statsE(jjj_before).Area && ...
-      		statsW(jjj).Area <= statsE(jjj_after).Area)
+      	    	statsW(jjj).Area <= statsE(jjj_after).Area)
+
+
+      	    %if (abs(sum(spd_raw(statsW(jjj).PixelIdxList))) <= abs(sum(spd_raw(statsE(jjj_before).PixelIdxList))) && ...
+      	%	abs(sum(spd_raw(statsW(jjj).PixelIdxList))) <= abs(sum(spd_raw(statsE(jjj_after).PixelIdxList))))
+	      
       	      mask_net_eastward_propagation(indxW) = 1;
       	    end
       	  end
 	  
-	  
-		  % Let westerly propagation periods eat easterly jogs
+	  %% %%%%%%%%%%%%%%%%%%%%%%%%%%%
+	  %% Let westerly propagation periods eat easterly jogs
+	  %% %%%%%%%%%%%%%%%%%%%%%%%%%%%
           statsE=regionprops(mask_net_eastward_propagation, 'all') ;
           statsW=regionprops(~mask_net_eastward_propagation, 'all') ;
 	  
@@ -287,8 +321,14 @@ for year1 = 1998:2017  ;
       	      % If "area" (e.g., duration) of statsW is less than both
       	      % "areas" of statsE, then eat it.
       	    if (statsE(jjj).Area <= statsW(jjj_before).Area && ...
-      		statsE(jjj).Area <= statsW(jjj_after).Area)
-      	      mask_net_eastward_propagation(indxE) = 0;
+	    	statsE(jjj).Area <= statsW(jjj_after).Area)
+
+      	    %if (abs(sum(spd_raw(statsE(jjj).PixelIdxList))) <= abs(sum(spd_raw(statsW(jjj_before).PixelIdxList))) && ...
+      	%	abs(sum(spd_raw(statsE(jjj).PixelIdxList))) <= abs(sum(spd_raw(statsW(jjj_after).PixelIdxList))))
+
+
+
+	      mask_net_eastward_propagation(indxE) = 0;
       	    end
       	  end
 	  
@@ -403,8 +443,8 @@ for year1 = 1998:2017  ;
       [dum, imax] = max(eastward_propagation_metric .* meets_mjo_criteria);
       if (sum(eastward_propagation_metric  .* meets_mjo_criteria == dum) > 1)
 				% Tie-breaker, but only if really needed.
-	[dum, imax] = max(eastward_propagation_metric  .* meets_mjo_criteria + ...
-			  eastward_propagation_metric2 .* meets_mjo_criteria );
+	[dum, imax] = max(eastward_propagation_metric  .* (eastward_propagation_metric == dum) + ...
+			  eastward_propagation_metric2 .* (eastward_propagation_metric == dum) );
 
       end
 
