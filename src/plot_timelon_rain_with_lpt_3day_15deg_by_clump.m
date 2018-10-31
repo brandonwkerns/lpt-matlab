@@ -1,8 +1,6 @@
 clear all
 close all
 
-YEAR1=1998;
-YEAR2=1999;
 addpath('../config')
 options
 
@@ -20,24 +18,22 @@ PLOT_DIR = ['../plots/',CASE_LABEL,'/processed/',...
 
 
 figure('visible','off')
-set(gcf,'position',[100,100,500,800])
+set(gcf,'position',[100,100,1000,800])
 set(gcf,'color','w')
 
 corner_label={'5 deg. Filter','Threshold=12 mm/day'};
-CLUMPS=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/clumps_of_worms.txt','',1,0);
+CLUMPS=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/clumps_of_worms.rejoin.txt'],'',1,0);
 colors=hsv(12);
 
-%{
-MC_CROSSING=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/list_mc_crossing_io_lpts.txt','',1,0);
-NON_MC_CROSSING=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/list_non_mc_crossing_io_lpts.txt','',1,0);
-WPAC=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/list_wpac_lpts.txt','',1,0);
-%}
 
-MJO=dlmread('../data/trmm_keep_overlapping_tracks/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.txt','',1,0);
+MJO=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.rejoin.txt'],'',1,0);
 
-% for year1=[2011]
-% for year1=[1999:2016]
-for year1=[1999:2017]
+lon_range = [0, 360];
+lon_ticks = 0:20:360;
+
+
+%for year1=[2017]
+for year1=[1998:2017]
 
   clf
 
@@ -58,16 +54,14 @@ for year1=[1999:2017]
   disp(y1_y2) ;
 
   F=load(['../data/trmm/interim/timelon/rain_hov_',y1_y2,'_15deg_3day_full_year.mat']) ;
-  G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.mat']) ;
+  G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.rejoin.mat']) ;
 
-  if isfield(G, 'TIMECLUSTERS2')
-    G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS2];
-  end
-  if isfield(G, 'TIMECLUSTERS3')
-    G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS3];
-  end
-  if isfield(G, 'TIMECLUSTERS4')
-    G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS4];
+  for iiii = 2:20
+
+    if isfield(G, ['TIMECLUSTERS', num2str(iiii)])
+      eval(['G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS', num2str(iiii),'];'])
+    end
+
   end
 
 
@@ -93,7 +87,7 @@ for year1=[1999:2017]
   colormap(flipud(gray()))
 
 
-  axis([40,200,datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)])
+  axis([lon_range(1),lon_range(2),datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)])
 
 
   alreadyPlottedList=[-1] ;
@@ -117,7 +111,7 @@ for year1=[1999:2017]
 
     alreadyPlottedList=[alreadyPlottedList,ii];
 
-    longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],[40,200],[],thisCol,0.2) ;
+    longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],lon_range,[],thisCol,0.2) ;
 
     % Beginning/Ending Track Labels
     text(GG.lon(1), GG.time(1), num2str(this_clump_id),'clipping','on');
@@ -165,15 +159,13 @@ for year1=[1999:2017]
 
 
   hcb=colorbar('NorthOutside') ;
-  %    set(hcb,'xtick',log([.25,.5,1]),'xticklabel',{'6','12','24'})
   set(hcb,'xtick',log([.5,1,2]),'xticklabel',{'12','24','48'})
 
   set(hcb,'position',[0.15,0.91,0.8,0.01]) ;
   set(gca,'position',[0.15,0.05,0.8,0.8]);
 
 
-  set(gca,'xtick', 40:20:180) ;
-  % axis([40,200,datenum(year1,10,1,0,0,0),datenum(year2,4,1,0,0,0)])
+  set(gca,'xtick', lon_ticks) ;
 
 
   set(gca,'layer','top')
