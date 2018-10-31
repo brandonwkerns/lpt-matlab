@@ -23,11 +23,11 @@ maxTimeToConnect = OPT.TRACKING_MAX_TIME_TO_RECONNECT;% 3 ; %Maximum time betwee
                      %times have data but do not have clusters.
 
 minFramesToKeep = OPT.TRACKING_MINIMUM_FRAMES ; %Need this many entries in track to keep it.
-minDuration = OPT.TRACKING_MINIMUM_DURATION; % 96 ; % Minimum duration to keep it (hours).
+minDuration = OPT.TRACKING_MINIMUM_DURATION; % Minimum duration to keep it (hours).
 
 maxLat = OPT.FEATURE_MAX_LAT ; %Positive. Max distance off the equator to keep it.
 
-maxDistToConnect = 20.0; %Max. distance between centroids to match them.
+maxDistToConnect = 9999.0 ; %20.0; %Max. distance between centroids to match them.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -526,101 +526,8 @@ if (OPT.CALC_MASK == true)
 end
 
 
-
-
-% .mat file output
-% If "TIMECLUSTERS" is > 2 GB, need to break it up.
-
-sum_of_mb = 0.0;
-for tt = 1:numel(TIMECLUSTERS)
-  TCtemp = TIMECLUSTERS(tt);
-  stats = whos('TCtemp');
-  sum_of_mb = sum_of_mb + stats.bytes/1024/1024;
-end
-
-disp(['Total TIMECLUSTERS size: ',num2str(sum_of_mb),' MB.'])
-
-
-break_up_point = -1;
-sum_of_mb = 0.0;
-for tt = 1:numel(TIMECLUSTERS)
-  TCtemp = TIMECLUSTERS(tt);
-  stats = whos('TCtemp');
-  sum_of_mb = sum_of_mb + stats.bytes/1024/1024;
-  if (sum_of_mb > 2000.0)
-    break_up_point = tt-1;
-    break
-  end
-end
-
-if break_up_point < 0
-  fout.TIMECLUSTERS = TIMECLUSTERS ;
-else
-  disp('Data larger than 2 GB! Broken up in to TIMECLUSTERS and TIMECLUSTERS2.')
-  fout.TIMECLUSTERS = TIMECLUSTERS(1:break_up_point) ;
-  fout.TIMECLUSTERS2 = TIMECLUSTERS(break_up_point+1:end) ;
-end
-
-
-if isfield(fout, 'TIMECLUSTERS2')
-
-  TIMECLUSTERS2 = fout.TIMECLUSTERS2;
-
-  break_up_point = -1;
-  sum_of_mb = 0.0;
-  for tt = 1:numel(TIMECLUSTERS2)
-    TCtemp = TIMECLUSTERS2(tt);
-    stats = whos('TCtemp');
-    sum_of_mb = sum_of_mb + stats.bytes/1024/1024;
-    if (sum_of_mb > 2000.0)
-      break_up_point = tt-1;
-      break
-    end
-  end
-
-  if break_up_point < 0
-    fout.TIMECLUSTERS2 = TIMECLUSTERS2 ;
-  else
-    disp('Data larger than 2 GB! Broken up in to TIMECLUSTERS2 and TIMECLUSTERS3.')
-    fout.TIMECLUSTERS2 = TIMECLUSTERS2(1:break_up_point) ;
-    fout.TIMECLUSTERS3 = TIMECLUSTERS2(break_up_point+1:end) ;
-  end
-
-end
-
-
-if isfield(fout, 'TIMECLUSTERS3')
-
-  TIMECLUSTERS3 = fout.TIMECLUSTERS3;
-
-  break_up_point = -1;
-  sum_of_mb = 0.0;
-  for tt = 1:numel(TIMECLUSTERS3)
-    TCtemp = TIMECLUSTERS3(tt);
-    stats = whos('TCtemp');
-    sum_of_mb = sum_of_mb + stats.bytes/1024/1024;
-    if (sum_of_mb > 2000.0)
-      break_up_point = tt-1;
-      break
-    end
-  end
-
-  if break_up_point < 0
-    fout.TIMECLUSTERS3 = TIMECLUSTERS3 ;
-  else
-    disp('Data larger than 2 GB! Broken up in to TIMECLUSTERS3 and TIMECLUSTERS4.')
-    fout.TIMECLUSTERS3 = TIMECLUSTERS3(1:break_up_point) ;
-    fout.TIMECLUSTERS4 = TIMECLUSTERS3(break_up_point+1:end) ;
-  end
-
-end
-
-
-
-fout.grid = CE.grid ;
 fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
-disp(fileout_mat)
-eval(['save ', fileout_mat, ' -struct fout'])
+lpt_systems_output_mat(TIMECLUSTERS, CE, fileout_mat)
 
 disp('Done.')
 
