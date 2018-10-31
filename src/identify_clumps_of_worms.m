@@ -72,15 +72,16 @@ for year1=1998:2017  ;
 
   dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.mat']);
   G=load([PROCESSED_DATA_DIR,'/', dir0(1).name]) ;
-  if isfield(G, 'TIMECLUSTERS2')
-    G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS2];
+
+  for iiii = 2:20
+
+    if isfield(G, ['TIMECLUSTERS', num2str(iiii)])
+      eval(['G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS', num2str(iiii),'];'])
+    end
+
   end
-  if isfield(G, 'TIMECLUSTERS3')
-    G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS3];
-  end
-  if isfield(G, 'TIMECLUSTERS4')
-    G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS4];
-  end
+
+  
 
   count=0 ; % Keep count of east propagating systems.
 
