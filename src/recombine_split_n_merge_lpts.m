@@ -48,7 +48,7 @@ OBJECTS_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
 max_n_splitting_times = 999 ; % Max splitting times to recombine.
 n_splitting_times_collect = [];
 
-for year1 = 1998:2017  ;
+for year1 = [2017] %1998:2017  ;
 
     year2=year1+1 ;
 
@@ -89,7 +89,7 @@ for year1 = 1998:2017  ;
     clump_idx_this_year = find(clumps(:,1) == year1);
     lptid_this_year = clumps(clump_idx_this_year, 2)';
     clump_num_this_year = clumps(clump_idx_this_year, 3)';
-
+    
     for this_clump_num = [unique(clump_num_this_year)]
 
       disp(['----------- Clump #', num2str(this_clump_num), ' -----------'])
@@ -120,19 +120,14 @@ for year1 = 1998:2017  ;
         continue
       end
 
+      for pass = [1,2] %Do it twice.
+      
 				%lptid_for_this_clump=[21];
-      for ii = [lptid_for_this_clump] %   1:numel(G.TIMECLUSTERS)
+      for ii = [sort(lptid_for_this_clump)] %   1:numel(G.TIMECLUSTERS)
 
         disp([num2str(ii), ' of ', num2str(numel(G.TIMECLUSTERS))])
 	
-        GG=G.TIMECLUSTERS(ii) ;
-
-	%% It may have already been eliminated. If so, skip it.
-	if (numel(GG.ceid) < 1)
-	  disp("Allready eliminated. Moving on.")
-	  continue
-	end
-	
+        GG=G.TIMECLUSTERS(ii) ;	
 	
         [GG.year,GG.month,GG.day]=datevec(GG.time) ;
         [GG.year0,GG.month0,GG.day0,GG.hour0]=datevec(GG.time(1)) ;
@@ -151,7 +146,8 @@ for year1 = 1998:2017  ;
 	%% back together into a single track.
 	%%
 
-	other_lptids_in_this_clump = setxor(lptid_for_this_clump, ii);
+	other_lptids_in_this_clump = sort(setxor(lptid_for_this_clump, ii));
+	%other_lptids_in_this_clump = other_lptids_in_this_clump(other_lptids_in_this_clump > ii);
 	
 	for jj = [other_lptids_in_this_clump]
 
@@ -162,29 +158,52 @@ for year1 = 1998:2017  ;
 	  end
 
 	  %% To be a candidate for recombining, the following must apply:
-	  %% 1. The tracks begin and end at the same time.
-	  %% 2. The tracks begin and and with the same CEID.
+	  %% 1. The have a time period of splitting.
+	  %% 2. The splitting period is bounded by the intersecting time period.
 
-	  if (GG.time(1) == HH.time(1) & GG.time(end) == HH.time(end))
-	    if (GG.ceid(1) == HH.ceid(1) & GG.ceid(end) == HH.ceid(end))
+	  intersections = intersect(GG.ceid, HH.ceid);
+	  splitting_obj_ids = setxor(GG.ceid, HH.ceid);
+
+	  intersection_times = unique(OBJECTS.time(intersections));
+	  splitting_times = unique(OBJECTS.time(splitting_obj_ids));
 	  
-	      intersections = intersect(GG.ceid, HH.ceid); 
-
-	      n_splitting_times = numel(GG.ceid) - numel(intersections);
-	      n_splitting_times_collect = [n_splitting_times_collect, ...
-					   n_splitting_times];
+	  if (numel(splitting_times) < 1)
+	    continue
+	  end
+	  
+	  %n_splitting_times = numel(GG.ceid) - numel(intersections);
+	  %n_splitting_times_collect = [n_splitting_times_collect, ...
+				       n_splitting_times];
+	  
+	  disp([num2str(numel(splitting_times)), ' splitting times.'])
+	  disp([num2str(numel(splitting_obj_ids)), ' splitting LP objects.'])
+	  
+	  for this_splitting_time = [splitting_times]
 	      
-	      disp([num2str(n_splitting_times), ' splitting times.'])
-	      
-	      if (n_splitting_times < max_n_splitting_times)
-		
-		disp([num2str(ii), ' and ', num2str(jj) ' overlap.'])
-		
+	    if (this_splitting_time > min(intersection_times) & this_splitting_time < max(intersection_times))
+	      %if (GG.time(1) == HH.time(1) & GG.time(end) == HH.time(end))
+		%if (GG.ceid(1) == HH.ceid(1) & GG.ceid(end) == HH.ceid(end))
 
-		G.TIMECLUSTERS(ii).ceid = unique([GG.ceid, HH.ceid]);
-		G.TIMECLUSTERS(jj).ceid = [];
-		lpts_to_eliminate	= [lpts_to_eliminate, jj];
+	      %% OK, a split-n-merge case is detected!
+	      %% We won't know how many LPT system branches are affected,
+	      %% So, first figure this out.
+	      %% Then, we can assign the relevant object ids to each of those LPT branches.
+
+	      %% LEFT OFF HERE.
+	      
+	      G.TIMECLUSTERS(ii).ceid = unique([GG.ceid, splitting_obj_ids]);
+
+	      for jjjj = [other_lptids_in_this_clump]
+	      
+		%if (n_splitting_times < max_n_splitting_times)
+		if ( numel(intersect(G.TIMECLUSTERS(jjjj).ceid, splitting_obj_ids)) > 0)
+		  disp([num2str(ii), ' and ', num2str(jjjj) ' overlap.'])
+		  
+		  G.TIMECLUSTERS(jjjj).ceid = unique([G.TIMECLUSTERS(jjjj).ceid, splitting_obj_ids]);
+		  %lpts_to_eliminate	= [lpts_to_eliminate, jj];
 	    
+		end
+
 	      end
 	    end
 	    
@@ -193,9 +212,13 @@ for year1 = 1998:2017  ;
 	end
 		
       end
+
+
+      end
     end
 
-    %% Take out the identified duplicates.
+    %% Take out duplicates.
+    lpts_to_eliminate = unique(lpts_to_eliminate);
     disp(['Eliminating: ', num2str(numel(lpts_to_eliminate)),...
 	  ' of ', num2str(numel(G.TIMECLUSTERS)), ' LPTs.'])
 

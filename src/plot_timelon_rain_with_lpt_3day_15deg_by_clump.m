@@ -145,8 +145,10 @@ for year1=[1998:2017]
 
     end
 
-    if idx1 > -1
-      plot(GG.lon(idx1:idx2), GG.time(idx1:idx2)-1.5, 'k-', 'linewidth', 2.0);
+    if idx1(1) > -1
+      for idxx = 1:numel(idx1)
+        plot(GG.lon(idx1(idxx):idx2(idxx)), GG.time(idx1(idxx):idx2(idxx)), 'k-', 'linewidth', 2.0);
+      end
     end
 
   end

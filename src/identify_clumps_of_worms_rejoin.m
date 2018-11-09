@@ -58,7 +58,7 @@ fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.rejoin.txt']
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
-for year1=1998:2017  ;
+for year1=[2017] %1998:2017  ;
 
   year2=year1+1 ;
 
