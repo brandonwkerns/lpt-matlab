@@ -117,4 +117,16 @@ THRESH        for example thresh12 for 12 mm/day threshold.
    -- recombine_split_n_merge_lpts2.m (Generates TIMECLUSTERS*.rejoin.* files)
    -- identify_clumps_of_worms_rejoin2.m (needed -- grouping on to LPT system families)
    -- identify_mjo_candidates_rejoin2.m (get MJO candidates from this step).
-   
+
+10) Plotting.
+
+    A set of sample plotting scripts are provided with the package. These are set up for TRMM TMPA,
+    and would need to be adapted to use with other data sets.
+
+    calc_rainrate_hov_MULTI_15deg_3day_full_year.m and calc_rainrate_hov_MULTI_15deg_3h_full_year.m
+    calculate the time-lon rain which is used in plotting scripts.
+
+    The plot*.py and plot*.m scripts do the actual plotting.
+
+    Mostly, plots are written to the plots/CASE_LABEL/ directory.
+    
