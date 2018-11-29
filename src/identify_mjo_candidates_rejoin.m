@@ -65,7 +65,7 @@ fprintf(fid_mjo_lpt_list, '%s\n', header);
 
 count=0 ; % Keep count of east propagating systems.
 
-for year1 = 1998:2017  ;
+for year1 = [2018] %1998:2017  ;
 
   
   year2=year1+1 ;

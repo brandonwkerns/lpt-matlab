@@ -58,7 +58,7 @@ fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.txt'],'w');
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
-for year1=1998:2017  ;
+for year1=[2018] %1998:2017 
 
   year2=year1+1 ;
 
@@ -73,7 +73,7 @@ for year1=1998:2017  ;
   dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.mat']);
   G=load([PROCESSED_DATA_DIR,'/', dir0(1).name]) ;
 
-  for iiii = 2:20
+  for iiii = 2:30
 
     if isfield(G, ['TIMECLUSTERS', num2str(iiii)])
       eval(['G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS', num2str(iiii),'];'])

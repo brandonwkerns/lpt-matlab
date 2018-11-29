@@ -32,8 +32,8 @@ lon_range = [0, 360];
 lon_ticks = 0:20:360;
 
 
-%for year1=[2017]
-for year1=[1998:2017]
+for year1=[2018]
+%for year1=[1998:2017]
 
   clf
 
@@ -45,9 +45,10 @@ for year1=[1998:2017]
   yyyy2=num2str(year2) ;
 
   y1_y2=[yyyy1,'_',yyyy2] ;
-  % y11_y22=[yyyy1,'010400_',yyyy2,'063021'] ;
   if year1 == 2017
     y11_y22=[yyyy1,'060100_',yyyy2,'053121'] ;
+  elseif year1 == 2018
+    y11_y22=[yyyy1,'060100_',yyyy1,'112721'] ;
   else
     y11_y22=[yyyy1,'060100_',yyyy2,'063021'] ;
   end

@@ -2,7 +2,7 @@ clear all
 close all
 
 
-for year1=[1998:2017]
+for year1=[2018]
 
 
 year2=year1+1 ;
@@ -20,7 +20,8 @@ lat1=-14.875 ;
 lat2=14.875 ;
 
 dateNumNow=now() ;
-dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year2,6,1,0,0,0) ;
+%dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year2,6,1,0,0,0) ;
+dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year1,11,27,21,0,0) ;
 
 %% Set up arrays
 lon=0.875:.25:359.875 ;

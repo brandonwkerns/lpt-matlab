@@ -1,11 +1,13 @@
 function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer(G, year1, ii, do_plotting)
 
 
-  divide_and_conquer_longitude_cutoff = 20.0; % If propagation in east or west propagating region is larger than this, don't allow it to get "eaten".
+  divide_and_conquer_longitude_cutoff = 20.0; % If propagation in the surrounding west (east) propagating region is larger than this, don't allow it to get "eaten" by the surrounding east (west) propagation areas.
 
   divide_and_conquer_days_cutoff = 7.0; % If propagation in east or west propagating region is at least this duration (days), don't allow it to get "eaten".
 
 
+  backtrack_allowance = 5.0;
+  
   GG=G.TIMECLUSTERS(ii) ;
   GG.date=GG.time-1.5 ;
   GG.size=sqrt(GG.area) ;
@@ -18,18 +20,15 @@ function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer
   [GG.year1,GG.month1,GG.day1,GG.hour1]=datevec(GG.time(end)) ;
   
   
-  
-  
-  
-  
-  %% Make speed be a centered difference except forward (backward) diff at beginning (end).
+  %% Calculate the zonal speed time series.
+  %% Speed is centered difference except forward (backward) diff at beginning (end).
   spd_raw = [];
   spd_raw(2:GG.nentries-1) = (GG.lon(3:end) - GG.lon(1:end-2)) * 110000.0 / (2.0*10800.0);
   spd_raw(1) = (GG.lon(2) - GG.lon(1)) * 110000.0 / 10800.0;
   spd_raw(GG.nentries) = (GG.lon(end) - GG.lon(end-1)) * 110000.0 / 10800.0;
   
   
-  %% plot
+  %% plot speed, if plots are specified.
   %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
   if (do_plotting)
@@ -90,7 +89,6 @@ function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer
   %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
   
-	      % Note: from here on, use mask_net_eastward_propagation.
   
   keep_going = 1;
   niter = 0;
@@ -135,7 +133,7 @@ function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer
       indx_this_segment = statsALL(jjj).SubarrayIdx{2};
       lon_this_segment = GG.lon(indx_this_segment);
       
-      %% If it is a westward segment
+      %% If it is a westward segment, should it be conquered by the surrounding eastward segments?
       if mean(mask_net_eastward_propagation(indx_this_segment)) < 0.5
 	
 	lon_begin_west_progation = max(lon_this_segment);
@@ -143,7 +141,9 @@ function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer
 	west_lon_propagation = -1 * (lon_end_west_progation - lon_begin_west_progation);
 	west_duration = max(GG.time(indx_this_segment)) - min(GG.time(indx_this_segment));
 	
-      			%Find the adjacent eastward propagating areas.
+	%% Find the adjacent eastward propagating areas.
+	%% If I am at the beginning or end of the track, I cannot be "conquered".
+
 	jjj_before = jjj - 1;
       	if (jjj_before < 1)
       	  continue
@@ -162,6 +162,13 @@ function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer
 	lon_begin_east_propagation_after = min(lon_of_east_propagation_after);%(1);
 	lon_end_east_propagation_after = max(lon_of_east_propagation_after);%(end);
 	east_lon_propagation_after = lon_end_east_propagation_after - lon_begin_east_propagation_after;
+
+	%% Centroid must progress further EASTWARD than the previous segment to even further consider.
+	%% If this is NOT the case, DO NOT EAT and go on to the next iteration.
+	if max(lon_of_east_propagation_before) > max(lon_of_east_propagation_after) + backtrack_allowance
+	  continue
+	end
+
 	
 	
 	%% Check how much westward propagation there was in StatsW.
@@ -185,7 +192,7 @@ function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer
 	  
 	end
 	
-      else %% If it is a eastward segment
+      else %% If it is a eastward segment, should it be conquered by the surrounding westward segments?
 	
 	
 	%% %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -198,7 +205,8 @@ function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer
 	east_duration = max(GG.time(indx_this_segment)) - min(GG.time(indx_this_segment));
 	
 	
-      			%Find the adjacent eastward propagating areas.
+	%% Find the adjacent westward propagating areas.
+	%% If I am at the beginning or end of the track, I cannot be "conquered".
 	jjj_before = jjj - 1;
       	if (jjj_before < 1)
       	  continue
@@ -218,6 +226,14 @@ function [mask_net_eastward_propagation, spd_raw] = west_east_divide_and_conquer
 	lon_begin_west_propagation_after = max(lon_of_west_propagation_after);%(1);
 	lon_end_west_propagation_after = min(lon_of_west_propagation_after);%(end);
 	west_lon_propagation_after = lon_end_west_propagation_after - lon_begin_west_propagation_after;
+
+	%% Centroid must progress further WESTWARD than the previous segment to even further consider.
+	%% If this is NOT the case, DO NOT EAT and go on to the next iteration.
+	if min(lon_of_west_propagation_before) < min(lon_of_west_propagation_after) - backtrack_allowance
+	  continue
+	end
+	
+	
 	
 	
 	%% Check how much eastward propagation there was in StatsE.
