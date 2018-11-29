@@ -1,6 +1,7 @@
 clear all
 close all
 
+
 addpath('../config')
 options
 
@@ -22,18 +23,17 @@ set(gcf,'position',[100,100,1000,800])
 set(gcf,'color','w')
 
 corner_label={'5 deg. Filter','Threshold=12 mm/day'};
-CLUMPS=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/clumps_of_worms.rejoin.txt'],'',1,0);
+CLUMPS=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/clumps_of_worms.rejoin2.txt'],'',1,0);
 colors=hsv(12);
 
 
-MJO=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.rejoin.txt'],'',1,0);
+MJO=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.rejoin2.txt'],'',1,0);
 
 lon_range = [0, 360];
 lon_ticks = 0:20:360;
 
-
-for year1=[2018]
-%for year1=[1998:2017]
+%for year1=[2017]
+for year1=[1998:2017]
 
   clf
 
@@ -47,15 +47,13 @@ for year1=[2018]
   y1_y2=[yyyy1,'_',yyyy2] ;
   if year1 == 2017
     y11_y22=[yyyy1,'060100_',yyyy2,'053121'] ;
-  elseif year1 == 2018
-    y11_y22=[yyyy1,'060100_',yyyy1,'112721'] ;
   else
     y11_y22=[yyyy1,'060100_',yyyy2,'063021'] ;
   end
   disp(y1_y2) ;
 
   F=load(['../data/trmm/interim/timelon/rain_hov_',y1_y2,'_15deg_3day_full_year.mat']) ;
-  G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.rejoin.mat']) ;
+  G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.rejoin2.mat']) ;
 
   for iiii = 2:20
 
@@ -64,6 +62,7 @@ for year1=[2018]
     end
 
   end
+
 
 
   F.rain=F.rain/24 ;
@@ -93,32 +92,6 @@ for year1=[2018]
 
   alreadyPlottedList=[-1] ;
 
-  for ii=1:numel(G.TIMECLUSTERS)
-
-    % if ( numel(find(alreadyPlottedList == ii)) > 0 )
-    %     continue
-    % end
-
-    GG=G.TIMECLUSTERS(ii) ;
-    GG.date=GG.time-1.5 ;
-    GG.size=sqrt(GG.area) ;
-    GG.area=GG.area/1e4 ;
-    GG.nentries=numel(GG.date) ;
-    GG.duration=3.0*numel(GG.date)/24 ;
-
-    this_clump_row = find(CLUMPS(:,1) == year1 & CLUMPS(:,2) == ii);
-    this_clump_id = CLUMPS(this_clump_row,3);
-    thisCol = colors(1+mod(this_clump_id, 10),:);
-
-    alreadyPlottedList=[alreadyPlottedList,ii];
-
-    longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],lon_range,[],thisCol,0.2) ;
-
-    % Beginning/Ending Track Labels
-    text(GG.lon(1), GG.time(1), num2str(this_clump_id),'clipping','on');
-    text(GG.lon(end), GG.time(end), num2str(this_clump_id),'clipping','on');
-  end
-
 
   for ii=1:numel(G.TIMECLUSTERS)
 
@@ -146,12 +119,15 @@ for year1=[2018]
 
     end
 
+
     if idx1(1) > -1
       for idxx = 1:numel(idx1)
-        plot(GG.lon(idx1(idxx):idx2(idxx)), GG.time(idx1(idxx):idx2(idxx)), 'k-', 'linewidth', 2.0);
+        plot(GG.lon(idx1(idxx):idx2(idxx)), GG.time(idx1(idxx):idx2(idxx)), 'b-', 'linewidth', 3.0);
       end
     end
 
+
+    
   end
 
 
@@ -179,7 +155,7 @@ for year1=[2018]
 
   text(0.02,0.97,corner_label,'units','normalized', 'fontweight','bold')
 
-  fileOutBase=['rain_filter_track_hov_',y1_y2,'_wide_15deg_3day_by_clump'];
+  fileOutBase=['rain_filter_track_hov_',y1_y2,'_wide_15deg_3day_mjo_only2'];
 
   eval(['!mkdir -p ',PLOT_DIR])
   disp([PLOT_DIR,'/',fileOutBase,'.png'])

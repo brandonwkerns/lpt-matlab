@@ -13,15 +13,15 @@ yyyy2=num2str(year2) ;
 y1_y2=[yyyy1,'_',yyyy2] ;
 
 outdir=['../data/trmm/interim/timelon'];
-outfile=[outdir,'/rain_hov_',y1_y2,'_15deg_3day_full_year.mat'] ;
-mainDir='../data/trmm/interim/accumulated/72h' ;
+outfile=[outdir,'/rain_hov_',y1_y2,'_15deg_3h_full_year.mat'] ;
+mainDir='../data/trmm/interim/gridded_rain_rates' ;
 
 lat1=-14.875 ;
 lat2=14.875 ;
 
 dateNumNow=now() ;
-%dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year2,6,1,0,0,0) ;
-dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year1,11,27,21,0,0) ;
+%dateNum30=datenum(year1,6,1,0,0,0):0.125:datenum(year2,6,1,0,0,0) ;
+dateNum30=datenum(year1,6,1,0,0,0):0.125:datenum(year1,11,27,21,0,0) ;
 
 %% Set up arrays
 lon=0.875:.25:359.875 ;
@@ -50,7 +50,7 @@ for ii=1:length(dateNum30)
     
     %% Open 3B42 rain rate
     
-    fileRain=[mainDir,'/rain_accumulated_72h_',yyyy,mm,dd,hh,'.nc'] ;
+    fileRain=[mainDir,'/gridded_rain_rates_',yyyy,mm,dd,hh,'.nc'] ;
     
     F=[] ;
     if ( exist(fileRain) )

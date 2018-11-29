@@ -54,11 +54,11 @@ FMT=['%10d%10d%10d%10.2f  %4d%0.2d%0.2d%0.2d  %4d%0.2d%0.2d%0.2d\n'];
 
 header='      year     index     clump  duration       begin         end    ';
 
-fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.rejoin2.txt'],'w');
+fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.rejoin.txt'],'w');
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
-for year1=[2017] %1998:2017  ;
+for year1 = [2018] %1998:2017  ;
 
   year2=year1+1 ;
 
@@ -70,7 +70,7 @@ for year1=[2017] %1998:2017  ;
   disp(y1_y2) ;
 
 
-  dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.rejoin2.mat']);
+  dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.rejoin.mat']);
   G=load([PROCESSED_DATA_DIR,'/', dir0(1).name]) ;
 
   for iiii = 2:20

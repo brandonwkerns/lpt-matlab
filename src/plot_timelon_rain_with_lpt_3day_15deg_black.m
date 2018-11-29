@@ -1,8 +1,7 @@
 clear all
 close all
 
-YEAR1=1998;
-YEAR2=1999;
+
 addpath('../config')
 options
 
@@ -20,14 +19,15 @@ PLOT_DIR = ['../plots/',CASE_LABEL,'/processed/',...
 
 
 figure('visible','off')
-set(gcf,'position',[100,100,500,800])
+set(gcf,'position',[100,100,1000,800])
 set(gcf,'color','w')
 
 corner_label={'5 deg. Filter','Threshold=12 mm/day'};
+lon_range = [0, 360];
+lon_ticks = 0:20:360;
 
- for year1=[2017]
-% for year1=[1999:2016]
-%for year1=[1998:2017]
+%for year1=[2017]
+for year1=[1998:2017]
 
     clf
 
@@ -39,49 +39,22 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
     yyyy2=num2str(year2) ;
 
     y1_y2=[yyyy1,'_',yyyy2] ;
-    % y11_y22=[yyyy1,'010400_',yyyy2,'063021'] ;
-    %y11_y22=[yyyy1,'060100_',yyyy2,'063021'] ;
-     y11_y22=[yyyy1,'060100_',yyyy2,'053121'] ;
+    if year1 == 2017
+      y11_y22=[yyyy1,'060100_',yyyy2,'053121'] ;
+    else
+      y11_y22=[yyyy1,'060100_',yyyy2,'063021'] ;
+    end
 
     disp(y1_y2) ;
 
     F=load(['../data/trmm/interim/timelon/rain_hov_',y1_y2,'_15deg_3day_full_year.mat']) ;
-    G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.mat']) ;
-
-    if isfield(G, 'TIMECLUSTERS2')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS2];
+    G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.rejoin.mat']) ;
+    
+    for iiii = 2:20
+      if isfield(G, ['TIMECLUSTERS', num2str(iiii)])
+	eval(['G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS', num2str(iiii),'];'])
+      end
     end
-    if isfield(G, 'TIMECLUSTERS3')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS3];
-    end
-    if isfield(G, 'TIMECLUSTERS4')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS4];
-    end
-    if isfield(G, 'TIMECLUSTERS5')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS5];
-    end
-    if isfield(G, 'TIMECLUSTERS6')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS6];
-    end
-    if isfield(G, 'TIMECLUSTERS7')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS7];
-    end
-    if isfield(G, 'TIMECLUSTERS8')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS8];
-    end
-    if isfield(G, 'TIMECLUSTERS9')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS9];
-    end
-    if isfield(G, 'TIMECLUSTERS10')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS10];
-    end
-    if isfield(G, 'TIMECLUSTERS11')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS11];
-    end
-    if isfield(G, 'TIMECLUSTERS12')
-      G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS12];
-    end
-
 
 
 
@@ -108,7 +81,7 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
     colormap(cmap(9:end,:))
 
 
-    axis([40,200,datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)])
+    axis([lon_range(1),lon_range(2),datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)])
 
 
     alreadyPlottedList=[-1] ;
@@ -131,19 +104,15 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
             alreadyPlottedList=[alreadyPlottedList,ii];
             thisCol=[0.6,0.6,0.6] ;
 
-            longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],[40,200],[],thisCol,0.2) ;
+            longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],lon_range,[],thisCol,0.2) ;
 
         else
 
           thisCol='k' ;
 
-          longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],[40,200],[],thisCol,0.2) ;
+          longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],lon_range,[],thisCol,0.2) ;
 
 	end
-
-	%text(GG.lon(1), GG.time(1), num2str(ii),'clipping','on');
-	%text(GG.lon(end), GG.time(end), num2str(ii),'clipping','on');
-
     end
 
     TICKS=[datenum(year1,6,1,0,0,0):10:datenum(year2,6,1,0,0,0)];
@@ -154,15 +123,13 @@ corner_label={'5 deg. Filter','Threshold=12 mm/day'};
 
 
     hcb=colorbar('NorthOutside') ;
-    %    set(hcb,'xtick',log([.25,.5,1]),'xticklabel',{'6','12','24'})
     set(hcb,'xtick',log([.5,1,2]),'xticklabel',{'12','24','48'})
 
     set(hcb,'position',[0.15,0.91,0.8,0.01]) ;
     set(gca,'position',[0.15,0.05,0.8,0.8]);
 
 
-    set(gca,'xtick', 40:10:200) ;
-    % axis([40,200,datenum(year1,11,1,0,0,0),datenum(year2,2,1,0,0,0)])
+    set(gca,'xtick', lon_ticks) ;
 
 
     set(gca,'layer','top')
