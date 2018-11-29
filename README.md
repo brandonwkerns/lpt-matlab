@@ -93,3 +93,28 @@ THRESH        for example thresh12 for 12 mm/day threshold.
    Script: run_tracking.m
    Dependency: connect_time_clusters.m
    --> Outputs will be text, mat, and nc files in "data/CASE_LABEL/processed/FILTER_ACCUM/THRESH/"
+
+7) Group in to families, and identify MJO candidates if you want to use this version of track data.
+
+   Scripts:
+   -- identify_clumps_of_worms.m (needed to proceed with steps below)
+   -- identify_mjo_candidates.m (optional, not needed for steps below)
+
+### The following additional steps apply for Option 4, which is now the preferred option.
+### These steps identify "families" of LPT systems and rejoin many of the tracks with
+### short splits and mergers.
+
+8) Run the first "rejoin" script, which handles LPT systems that split then re-merge back together.
+
+   Scripts:
+   -- recombine_split_n_merge_lpts.m (Generates TIMECLUSTERS*.rejoin.* files)
+   -- identify_clumps_of_worms_rejoin.m (needed -- groupint in to LPT system families)
+   -- identify_mjo_candidates_rejoin.m (optional -- only if you want MJO candidates from this step).
+
+9) Run the second "rejoin" script, which handles short duration (e.g., < 3 day) mergers and splits.
+
+   Scripts:
+   -- recombine_split_n_merge_lpts2.m (Generates TIMECLUSTERS*.rejoin.* files)
+   -- identify_clumps_of_worms_rejoin2.m (needed -- grouping on to LPT system families)
+   -- identify_mjo_candidates_rejoin2.m (get MJO candidates from this step).
+   
