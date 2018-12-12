@@ -39,11 +39,11 @@ min_net_lon_propagation   = -999.0 ;%20.0 ; % in deg. longitude.
 min_total_lon_propagation = 10.0 ;%20.0 ; % in deg. longitude.
 max_abs_latitude = 7.5 ;% in deg. latitude. Must get this close to the Equator at some point.
 
-mc_lon_1 = 100.0 ; % West end of MC for MC crossing
-mc_lon_2 = 130.0 ; % East end of MC for MC crossing
+%mc_lon_1 = 100.0 ; % West end of MC for MC crossing
+%mc_lon_2 = 130.0 ; % East end of MC for MC crossing
 
 % Search area for initial time cluster.
-search_area = [50.0, 180.0, -15.0, 15.0];
+%search_area = [50.0, 180.0, -15.0, 15.0];
 
 %%
 %%
@@ -58,11 +58,7 @@ fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.rejoin2.txt'
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
-<<<<<<< HEAD
-for year1=[2017] %1998:2017  ;
-=======
 for year1 = 1998:2018  ;
->>>>>>> split_n_merge
 
   year2=year1+1 ;
 
@@ -104,7 +100,7 @@ for year1 = 1998:2018  ;
           clump_ids(ii) = clump_ids(jj);
           found_a_match = true;
         end
-        % break;
+
       end
 
     end

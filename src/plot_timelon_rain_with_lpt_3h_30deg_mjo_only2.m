@@ -1,6 +1,7 @@
 clear all
 close all
 
+
 addpath('../config')
 options
 
@@ -31,8 +32,7 @@ MJO=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastwar
 lon_range = [0, 360];
 lon_ticks = 0:20:360;
 
-
-%for year1=[2018]
+%for year1=[2017]
 for year1=[1998:2018]
 
   clf
@@ -52,7 +52,7 @@ for year1=[1998:2018]
   end
   disp(y1_y2) ;
 
-  F=load(['../data/trmm/interim/timelon/rain_hov_',y1_y2,'_15deg_3day_full_year.mat']) ;
+  F=load(['../data/trmm/interim/timelon/rain_hov_',y1_y2,'_30deg_3h_full_year.mat']) ;
   G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.rejoin2.mat']) ;
 
   for iiii = 2:20
@@ -64,22 +64,23 @@ for year1=[1998:2018]
   end
 
 
-  F.rain=F.rain/24 ;
+
+  %F.rain=F.rain/24 ;
   %F.rain(F.rain < 0.25) = NaN ;
-  F.rain(F.rain < 0.35) = NaN ;
+  F.rain(F.rain < 0.10) = NaN ;
 
 
   hold on
 
   DATA=log(F.rain) ;
 
-  pcolor(F.lon,F.time-3.0,DATA) ;
+  pcolor(F.lon,F.time-0.125,DATA) ;
   hold on
 
 
   shading flat
   %caxis([log(0.2),log(5)])
-  caxis([log(0.2),log(2)])
+  caxis([log(0.1),log(2)])
 
   cmap=dlmread('cmap_rain.dat') ;
   % colormap(cmap(9:end,:))
@@ -90,32 +91,6 @@ for year1=[1998:2018]
 
 
   alreadyPlottedList=[-1] ;
-
-  for ii=1:numel(G.TIMECLUSTERS)
-
-    % if ( numel(find(alreadyPlottedList == ii)) > 0 )
-    %     continue
-    % end
-
-    GG=G.TIMECLUSTERS(ii) ;
-    GG.date=GG.time-1.5 ;
-    GG.size=sqrt(GG.area) ;
-    GG.area=GG.area/1e4 ;
-    GG.nentries=numel(GG.date) ;
-    GG.duration=3.0*numel(GG.date)/24 ;
-
-    this_clump_row = find(CLUMPS(:,1) == year1 & CLUMPS(:,2) == ii);
-    this_clump_id = CLUMPS(this_clump_row,3);
-    thisCol = colors(1+mod(this_clump_id, 10),:);
-
-    alreadyPlottedList=[alreadyPlottedList,ii];
-
-    longstats_plot_ts_circles(GG,[datenum(year1,6,1,0,0,0),datenum(year2,6,1,0,0,0)],lon_range,[],thisCol,0.2) ;
-
-    % Beginning/Ending Track Labels
-    text(GG.lon(1), GG.time(1), num2str(this_clump_id),'clipping','on');
-    text(GG.lon(end), GG.time(end), num2str(this_clump_id),'clipping','on');
-  end
 
 
   for ii=1:numel(G.TIMECLUSTERS)
@@ -144,12 +119,15 @@ for year1=[1998:2018]
 
     end
 
+
     if idx1(1) > -1
       for idxx = 1:numel(idx1)
-        plot(GG.lon(idx1(idxx):idx2(idxx)), GG.time(idx1(idxx):idx2(idxx)), 'k-', 'linewidth', 2.0);
+        plot(GG.lon(idx1(idxx):idx2(idxx)), GG.time(idx1(idxx):idx2(idxx)), 'b-', 'linewidth', 3.0);
       end
     end
 
+
+    
   end
 
 
@@ -160,7 +138,7 @@ for year1=[1998:2018]
 
 
   hcb=colorbar('NorthOutside') ;
-  set(hcb,'xtick',log([.5,1,2]),'xticklabel',{'12','24','48'})
+  set(hcb,'xtick',log([0.25,.5,1,2]),'xticklabel',{'6','24','48'})
 
   set(hcb,'position',[0.15,0.91,0.8,0.01]) ;
   set(gca,'position',[0.15,0.05,0.8,0.8]);
@@ -177,7 +155,7 @@ for year1=[1998:2018]
 
   text(0.02,0.97,corner_label,'units','normalized', 'fontweight','bold')
 
-  fileOutBase=['rain_filter_track_hov_',y1_y2,'_wide_15deg_3day_by_clump2'];
+  fileOutBase=['rain_filter_track_hov_',y1_y2,'_wide_30deg_3h_mjo_only2'];
 
   eval(['!mkdir -p ',PLOT_DIR])
   disp([PLOT_DIR,'/',fileOutBase,'.png'])

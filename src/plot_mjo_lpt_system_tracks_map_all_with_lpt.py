@@ -70,6 +70,10 @@ fout = (out_dir + '/lpt_mjo_system_tracks_20yrs__map_with_lpt.png')
 
 for fn in sorted(glob.glob(dir+'/TIMECLUSTERS_*.rejoin2.nc')):
 
+    # Skip RT 2018 for now.
+    if "2018112721" in fn:
+        continue
+    
     print(fn, flush=True)
     year = int(fn[-32:-28])
 

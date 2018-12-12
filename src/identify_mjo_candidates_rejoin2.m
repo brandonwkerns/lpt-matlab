@@ -2,8 +2,8 @@ clear all
 close all
 
 
-do_plotting = true;
-%do_plotting = false;
+%do_plotting = true;
+do_plotting = false;
 
 
 

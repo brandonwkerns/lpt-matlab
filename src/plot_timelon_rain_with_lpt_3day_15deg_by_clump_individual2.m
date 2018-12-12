@@ -29,7 +29,7 @@ colors=hsv(12);
 
 MJO=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.rejoin2.txt'],'',1,0);
 
-for year1=[2018]
+for year1=[2011]
 %for year1=[1998:2017]
 
   clf
@@ -42,9 +42,6 @@ for year1=[2018]
   yyyy2=num2str(year2) ;
 
   y1_y2=[yyyy1,'_',yyyy2] ;
-  % y11_y22=[yyyy1,'010400_',yyyy2,'063021'] ;
-  if year1 == 2017
-    y11_y22=[yyyy1,'060100_',yyyy2,'053121'] ;
   elseif year1 == 2018
     y11_y22=[yyyy1,'060100_',yyyy1,'112721'] ;
   else

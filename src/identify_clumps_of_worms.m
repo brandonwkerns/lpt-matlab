@@ -58,7 +58,7 @@ fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.txt'],'w');
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
-for year1=[2018] %1998:2017 
+for year1=1998:2018 
 
   year2=year1+1 ;
 
@@ -101,7 +101,7 @@ for year1=[2018] %1998:2017
           clump_ids(ii) = clump_ids(jj);
           found_a_match = true;
         end
-        % break;
+
       end
 
     end
