@@ -9,27 +9,27 @@ do_plotting = false;
 
 % Read in options that pertain to the entire tracking package.
 % These settings are all in ../config/options.m
-addpath('../config')
+addpath('../../config')
 options
 
 
 %% Clumps of Worms
-clumps_file = ['../data/',CASE_LABEL,'/processed/',...
+clumps_file = ['../../data/',CASE_LABEL,'/processed/',...
                'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                sprintf('%d',ACCUMULATION_PERIOD), ...
                'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation/',...
-	       'clumps_of_worms.rejoin2.txt'];
+	       'clumps_of_worms.txt'];
 
 clumps = dlmread(clumps_file,'',1,0);
 
 
 %% Directories
-PROCESSED_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
+PROCESSED_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
 
-EASTWARD_PROP_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
+EASTWARD_PROP_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation'];
@@ -58,7 +58,7 @@ FMT=['%10d%10d%10d%10.2f%16.2f  %4d%0.2d%0.2d%0.2d  %4d%0.2d%0.2d%0.2d %10.2f ',
 
 header='      year     index     clump  duration  mean_zonal_spd       begin         end    volrain      eprop_begin_idx  eprop_end_idx  eprop_spd  eprop_dur eprop_begin   eprop_end     eprop_lon_begin  eprop_lon_end';
 
-fn_mjo_lpt_list = [EASTWARD_PROP_DATA_DIR,'/mjo_lpt_list.rejoin2.txt'];
+fn_mjo_lpt_list = [EASTWARD_PROP_DATA_DIR,'/mjo_lpt_list.txt'];
 fid_mjo_lpt_list = fopen(fn_mjo_lpt_list,'w');
 fprintf(fid_mjo_lpt_list, '%s\n', header);
 
@@ -79,7 +79,7 @@ for year1 = 1998:2018  ;
   disp(['########### ',y1_y2, ' ###########']) ;
   
   
-  dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.rejoin2.mat']);
+  dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.mat']);
   G=load([PROCESSED_DATA_DIR,'/', dir0(1).name]) ;
   for iiii = 2:20    
     if isfield(G, ['TIMECLUSTERS', num2str(iiii)])
