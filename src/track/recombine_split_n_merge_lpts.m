@@ -3,25 +3,16 @@ close all
 
 % Read in options that pertain to the entire tracking package.
 % These settings are all in ../config/options.m
-addpath('../config')
+addpath('../../config')
 options
 save('temp.mat');
 OPT = load('temp.mat');
 eval('!rm temp.mat')
 
-do_plotting = false;
-%do_plotting = true;
-
-
-
-% Read in options that pertain to the entire tracking package.
-% These settings are all in ../config/options.m
-addpath('../config')
-options
-
+do_plotting=0;
 
 %% Clumps of Worms
-clumps_file = ['../data/',CASE_LABEL,'/processed/',...
+clumps_file = ['../../data/',CASE_LABEL,'/processed/',...
                'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                sprintf('%d',ACCUMULATION_PERIOD), ...
                'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation/',...
@@ -31,12 +22,12 @@ clumps = dlmread(clumps_file,'',1,0);
 
 
 %% Directories
-PROCESSED_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
+PROCESSED_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
 
-OBJECTS_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
+OBJECTS_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                     'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                     sprintf('%d',ACCUMULATION_PERIOD), ...
                     'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/objects'];
