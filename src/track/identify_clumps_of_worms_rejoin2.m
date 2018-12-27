@@ -2,59 +2,30 @@ clear all
 close all
 
 
-% do_plotting = true;
-do_plotting = false;
-
-%% NINO 3.4 stuff.
-nino34=load('nino34.mat');
-
-
 % Read in options that pertain to the entire tracking package.
 % These settings are all in ../config/options.m
-addpath('../config')
+addpath('../../config')
 options
 
-PROCESSED_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
+PROCESSED_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
 
-EASTWARD_PROP_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
+EASTWARD_PROP_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation'];
 
 eval(['!mkdir -p ', EASTWARD_PROP_DATA_DIR])
 
-%%
-%% Set the east propagation identification criteria here.
-%%
-
-min_zonal_speed = -999.0 ; % in m/s.
-min_duration    = 7.0 ; % in Days. Doesn't include 3-Day accumulation period.
-min_eastward_prop_zonal_speed    = 0.0 ; % in m/s.
-min_eastward_prop_duration    = 7.0 ; % in Days. Doesn't include 3-Day accumulation period.
-
-min_net_lon_propagation   = -999.0 ;%20.0 ; % in deg. longitude.
-min_total_lon_propagation = 10.0 ;%20.0 ; % in deg. longitude.
-max_abs_latitude = 7.5 ;% in deg. latitude. Must get this close to the Equator at some point.
-
-mc_lon_1 = 100.0 ; % West end of MC for MC crossing
-mc_lon_2 = 130.0 ; % East end of MC for MC crossing
-
-% Search area for initial time cluster.
-search_area = [50.0, 180.0, -15.0, 15.0];
-
-%%
-%%
-%%
 
 % For output table files.
 FMT=['%10d%10d%10d%10.2f  %4d%0.2d%0.2d%0.2d  %4d%0.2d%0.2d%0.2d\n'];
 
 header='      year     index     clump  duration       begin         end    ';
 
-fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.rejoin.txt'],'w');
+fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.rejoin2.txt'],'w');
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
@@ -70,7 +41,7 @@ for year1 = 1998:2018  ;
   disp(y1_y2) ;
 
 
-  dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.rejoin.mat']);
+  dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.rejoin2.mat']);
   G=load([PROCESSED_DATA_DIR,'/', dir0(1).name]) ;
 
   for iiii = 2:20
@@ -100,7 +71,7 @@ for year1 = 1998:2018  ;
           clump_ids(ii) = clump_ids(jj);
           found_a_match = true;
         end
-        % break;
+
       end
 
     end
