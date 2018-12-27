@@ -3,14 +3,14 @@ close all
 
 % Read in options that pertain to the entire tracking package.
 % These settings are all in ../config/options.m
-addpath('../config')
+addpath('../../config')
 options
 
 % This script reads in the interim files from ../data/interim/gridded_rain_rates
 % and creates accumulated rain files in ../data/interim/accumulate_rain
-INTERIM_DATA_DIR_IN = ['../data/',CASE_LABEL,'/interim/accumulated/',...
+INTERIM_DATA_DIR_IN = ['../../data/',CASE_LABEL,'/interim/accumulated/',...
                         sprintf('%d',ACCUMULATION_PERIOD), 'h'];
-INTERIM_DATA_DIR_OUT = ['../data/',CASE_LABEL,'/interim/filtered/',...
+INTERIM_DATA_DIR_OUT = ['../../data/',CASE_LABEL,'/interim/filtered/',...
                         'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                         sprintf('%d',ACCUMULATION_PERIOD), 'h'];
 
