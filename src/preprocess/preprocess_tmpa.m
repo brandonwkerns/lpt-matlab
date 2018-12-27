@@ -3,13 +3,13 @@ close all
 
 % Read in options that pertain to the entire tracking package.
 % These settings are all in ../config/options.m
-addpath('../config')
+addpath('../../config')
 options
 
 % Set variables that pertain to this step.
 % Note: ALL gridded rain rate files should be linked or copied into the "RAW_DATA_DIR"
-RAW_DATA_DIR = ['../data/',CASE_LABEL,'/raw'];
-INTERIM_DATA_DIR = ['../data/',CASE_LABEL,'/interim/gridded_rain_rates'];
+RAW_DATA_DIR = ['../../data/',CASE_LABEL,'/raw'];
+INTERIM_DATA_DIR = ['../../data/',CASE_LABEL,'/interim/gridded_rain_rates'];
 
 %-----------------------------------------------------------------------------
 %-----------------------------------------------------------------------------
