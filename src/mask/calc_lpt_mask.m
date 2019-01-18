@@ -2,11 +2,8 @@ clear all
 close all
 
 
-%%%% Set year and LPT ID here.
-
-year = 2018;
-%lptid = 57;
-
+%%%% Set year here.
+year = 2011;
 
 %%%% Probably don't touch below.
 
@@ -80,11 +77,12 @@ time_with_accumulation = TIMECLUSTERS(lptid).time(1) - OPT.ACCUMULATION_PERIOD /
 mask_arrays.time = time_with_accumulation; % Pass to output function.
 nt = numel(time_with_accumulation);
 
-mask_arrays.mask_by_objid = -1+zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
-mask_arrays.mask_by_lptid = -1+zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
-mask_arrays.mask_by_lptid_with_filter = -1+zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
-mask_arrays.mask_by_lptid_with_accumulation = -1+zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
-mask_arrays.mask_by_lptid_with_filter_and_accumulation = -1+zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
+% LPT IDs and Object IDs start at index 1, so set "outside" to be zero.
+mask_arrays.mask_by_objid = zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
+mask_arrays.mask_by_lptid = zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
+mask_arrays.mask_by_lptid_with_filter = zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
+mask_arrays.mask_by_lptid_with_accumulation = zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
+mask_arrays.mask_by_lptid_with_filter_and_accumulation = zeros(nt, numel(CE.grid.lat), numel(CE.grid.lon));
 
 
 %% Loop over each time of this LPT.
