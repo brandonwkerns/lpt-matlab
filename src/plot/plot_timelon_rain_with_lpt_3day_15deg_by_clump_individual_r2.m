@@ -27,10 +27,10 @@ CLUMPS=clumps;
 colors=hsv(12);
 
 
-MJO=dlmread(['../../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.rejoin2.txt'],'',1,0);
+MJO=dlmread(['../../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/rossby_lpt_list.rejoin2.txt'],'',1,0);
 
-%for year1=[2011]
-for year1=[1998:2017]
+for year1=[2011]
+%for year1=[1998:2017]
 
   clf
 
@@ -77,7 +77,7 @@ for year1=[1998:2017]
   lptid_this_year = clumps(clump_idx_this_year, 2)';
   clump_num_this_year = clumps(clump_idx_this_year, 3)';
   
-  for this_clump_num = [unique(clump_num_this_year)]
+  for this_clump_num = [23] %[unique(clump_num_this_year)]
     
     disp(['----------- Clump #', num2str(this_clump_num), ' -----------'])
 
@@ -194,7 +194,7 @@ for year1=[1998:2017]
     
     text(0.02,0.97,corner_label,'units','normalized', 'fontweight','bold')
     
-    fileOutBase=['rain_filter_track_hov2_',y1_y2,'_clump', sprintf('%03d', this_clump_num)];
+    fileOutBase=['rain_filter_track_hov2_',y1_y2,'_clump', sprintf('%03d', this_clump_num),'_rossby'];
     
     eval(['!mkdir -p ',PLOT_DIR])
     disp([PLOT_DIR,'/',fileOutBase,'.png'])

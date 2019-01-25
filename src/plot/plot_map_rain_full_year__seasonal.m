@@ -33,7 +33,12 @@ MJO=dlmread(['../../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_east
 
 ROSSBY=dlmread(['../../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/rossby_lpt_list.rejoin2.txt'],'',1,0);
 
-for year1=[2004]
+lon1 = 0.0;
+lon2 = 360.0;
+lat1 = -45.0;
+lat2 = 45.0;
+
+for year1=[1998:2005]
 %for year1=[1998:2017]
 
   %%%%%%%%%%%%%%%%%%%%%%%%
@@ -51,154 +56,32 @@ for year1=[2004]
   end
   disp(y1_y2) ;
 
-  G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.rejoin2.mat']) ;
+  %% Use the "grand master mask" from the annual files to calculate the seasonal rain.
 
-  for iiii = 2:20
-    if isfield(G, ['TIMECLUSTERS', num2str(iiii)])
-      eval(['G.TIMECLUSTERS = [G.TIMECLUSTERS, G.TIMECLUSTERS', num2str(iiii),'];'])
-    end
-  end
+  fileInBase=['rain_map2_full_year_all_lpts__',y1_y2];
+  f=load([PLOT_DIR,'/',fileInBase,'.mat']);
 
-  %% Start with "grand master mask"
-  grand_master_start_time = datenum(year1,6,1,0,0,0);
-  grand_master_end_time = datenum(year2,5,31,21,0,0);
-  grand_master_times = grand_master_start_time:0.125:grand_master_end_time;
-  grand_master_mask = zeros(numel(grand_master_times), 400, 1440);
-  grand_master_mask_mjo = zeros(numel(grand_master_times), 400, 1440);
-  grand_master_mask_mjo_eastward_portion = zeros(numel(grand_master_times), 400, 1440);
-  grand_master_mask_rossby = zeros(numel(grand_master_times), 400, 1440);
-  grand_master_mask_rossby_westward_portion = zeros(numel(grand_master_times), 400, 1440);
-    
-  %% Get "clumps of worms" for this year.
-  clump_idx_this_year = find(clumps(:,1) == year1);
-  lptid_this_year = clumps(clump_idx_this_year, 2)';
-  clump_num_this_year = clumps(clump_idx_this_year, 3)';
+  grand_master_times = f.mask_time;
+  [Y, M] = datevec(grand_master_times);
+  keep_time = (M == 12 | M == 1 | M == 2);
+  grand_master_times_keep = grand_master_times(keep_time);
+  eliminate_time = ~keep_time;
+  grand_master_mask = f.mask_mask_lpt(keep_time,:,:);
+  grand_master_mask_mjo = f.mask_mask_mjo(keep_time,:,:);
+  grand_master_mask_mjo_eastward_portion = f.mask_mask_mjo_eastward_portion(keep_time,:,:);
+  grand_master_mask_rossby = f.mask_mask_rossby(keep_time,:,:);
+  grand_master_mask_rossby_westward_portion = f.mask_mask_rossby_westward_portion(keep_time,:,:);
+
+  %% Set the times outside the season of interest to ZERO.
+  %grand_master_mask(eliminate_time,:,:) = 0;
+  %grand_master_mask_mjo(eliminate_time,:,:) = 0;
+  %grand_master_mask_mjo_eastward_portion(eliminate_time,:,:) = 0;
+  %grand_master_mask_rossby(eliminate_time,:,:) = 0;
+  %grand_master_mask_rossby_westward_portion(eliminate_time,:,:) = 0;
   
-  for this_clump_num = [unique(clump_num_this_year)]
-    
-    disp(['----------- Clump #', num2str(this_clump_num), ' -----------'])
-
-    clf
-           
-
-    lptid_for_this_clump = lptid_this_year(clump_num_this_year == this_clump_num);
-
-    lon1 = 0.0;
-    lon2 = 360.0;
-    lat1 = -45.0;
-    lat2 = 45.0;
-    dn1 = datenum(2100,1,1,0,0,0);
-    dn2 = datenum(1900,1,1,0,0,0);
-
-
-
-    %% Rain
-    
-    %% Using mask.
-    
-    for ii=[lptid_for_this_clump]    
-      this_mask.file = [MASK_DIR,'/lpt_system_mask_',yyyy1,'_',sprintf('%03d',ii),'.nc'] ;
-      this_mask.lon = ncread(this_mask.file, 'lon');
-      this_mask.lat = ncread(this_mask.file, 'lat');
-
-      this_mask.time = ncread(this_mask.file, 'time');
-      this_mask.dn = datenum(1970,1,1,0,0,0) + this_mask.time / 24.0 ;
-      this_mask.mask = ncread(this_mask.file, 'mask_with_filter_and_accumulation');
-      this_mask.mask = permute(this_mask.mask, [3,2,1]);
-
-      this_beginning_time_indx = find(grand_master_times == max(grand_master_start_time,this_mask.dn(1)));
-      this_end_time_indx = find(grand_master_times == min(grand_master_end_time,this_mask.dn(end)));
-      this_time_indx_range = this_beginning_time_indx:this_end_time_indx;
-
-      this_beginning_time_indx0 = find(this_mask.dn == max(grand_master_start_time,this_mask.dn(1)));
-      this_end_time_indx0 = find(this_mask.dn == min(grand_master_end_time,this_mask.dn(end)));
-      this_time_indx_range0 = this_beginning_time_indx0:this_end_time_indx0;
-
-      
-      grand_master_mask(this_time_indx_range,:,:) = max(double(grand_master_mask(this_time_indx_range,:,:)),double(this_mask.mask(this_time_indx_range0,:,:)));
-
-
-      if ( sum(MJO(:,1) == year1 & ...
-               MJO(:,2) == ii) > 0 )
-
-    
-	grand_master_mask_mjo(this_time_indx_range,:,:) = max(double(grand_master_mask_mjo(this_time_indx_range,:,:)),double(this_mask.mask(this_time_indx_range0,:,:)));
-
-	%% For eastward propagating portion, need to use the indices.
-	idx11 = MJO((MJO(:,1) == year1 & ...
-                     MJO(:,2) == ii),9);
-	idx22 = MJO((MJO(:,1) == year1 & ...
-                     MJO(:,2) == ii),10);
-
-	for kkkk = 1:numel(idx11)
-
-	  idx1 = idx11(kkkk);
-	  idx2 = idx22(kkkk);
-	  
-	  this_beginning_time_indx = find(grand_master_times == max(grand_master_start_time,this_mask.dn(idx1)));
-	  this_end_time_indx = find(grand_master_times == min(grand_master_end_time,this_mask.dn(idx2)));
-	  this_time_indx_range = this_beginning_time_indx:this_end_time_indx;
-
-	  this_beginning_time_indx0 = find(this_mask.dn == max(grand_master_start_time,this_mask.dn(idx1)));
-	  this_end_time_indx0 = find(this_mask.dn == min(grand_master_end_time,this_mask.dn(idx2)));
-	  this_time_indx_range0 = this_beginning_time_indx0:this_end_time_indx0;
-
-	
-	  grand_master_mask_mjo_eastward_portion(this_time_indx_range,:,:) = max(double(grand_master_mask_mjo_eastward_portion(this_time_indx_range,:,:)),double(this_mask.mask(this_time_indx_range0,:,:)));
-
-	end % End eastward propagation portion.
-	
-      end %End check whether it is an MJO 
-
-      %%
-      %% Check for Rossby systems.
-      %%
-      if ( sum(ROSSBY(:,1) == year1 & ...
-               ROSSBY(:,2) == ii) > 0 )
-    
-	grand_master_mask_rossby(this_time_indx_range,:,:) = max(double(grand_master_mask_rossby(this_time_indx_range,:,:)),double(this_mask.mask(this_time_indx_range0,:,:)));
-
-	%% For eastward propagating portion, need to use the indices.
-	idx11 = ROSSBY((ROSSBY(:,1) == year1 & ...
-			ROSSBY(:,2) == ii),9);
-	idx22 = ROSSBY((ROSSBY(:,1) == year1 & ...
-			ROSSBY(:,2) == ii),10);
-
-	for kkkk = 1:numel(idx11)
-
-	  idx1 = idx11(kkkk);
-	  idx2 = idx22(kkkk);
-	  
-	  this_beginning_time_indx = find(grand_master_times == max(grand_master_start_time,this_mask.dn(idx1)));
-	  this_end_time_indx = find(grand_master_times == min(grand_master_end_time,this_mask.dn(idx2)));
-	  this_time_indx_range = this_beginning_time_indx:this_end_time_indx;
-
-	  this_beginning_time_indx0 = find(this_mask.dn == max(grand_master_start_time,this_mask.dn(idx1)));
-	  this_end_time_indx0 = find(this_mask.dn == min(grand_master_end_time,this_mask.dn(idx2)));
-	  this_time_indx_range0 = this_beginning_time_indx0:this_end_time_indx0;
-
-	
-	  grand_master_mask_rossby_westward_portion(this_time_indx_range,:,:) = max(double(grand_master_mask_rossby_westward_portion(this_time_indx_range,:,:)),double(this_mask.mask(this_time_indx_range0,:,:)));
-
-	end % End westward propagation portion.
-	
-      end %End check whether it is a Rossby system 
-      
-    end 
-
-
-    
-    disp([num2str(sum(sum(sum(grand_master_mask > 0.5)))), ', ',...
-	  num2str(sum(sum(sum(grand_master_mask_mjo > 0.5)))),', ',...
-	  num2str(sum(sum(sum(grand_master_mask_mjo_eastward_portion > 0.5)))),', ',...
-	  num2str(sum(sum(sum(grand_master_mask_rossby > 0.5)))),', ',...
-	  num2str(sum(sum(sum(grand_master_mask_rossby_westward_portion > 0.5))))])
-    if (sum(sum(sum(grand_master_mask_mjo > 0.5))) > sum(sum(sum(grand_master_mask > 0.5))))
-      disp('Warning! More MJO points than there are LPT points!!!')
-    end
-    
-  end % End loop over lptid.
-    
+  this_mask.lon = f.lon;
+  this_mask.lat = f.lat;
+  
   %% Get coordinates of the lon/lat extent of the "grand master mask."
     
   max_mask = squeeze(max(grand_master_mask));
@@ -215,7 +98,7 @@ for year1=[2004]
   %count = 0; % Will divide to get mean.
   idx = 1;
   
-    for dn_rain = grand_master_times
+    for dn_rain = grand_master_times_keep
       
       [y_rain, m_rain, d_rain, h_rain] = datevec(dn_rain);
       fileRain = ['../../data/trmm/interim/gridded_rain_rates/gridded_rain_rates_',...
@@ -273,7 +156,8 @@ for year1=[2004]
     rain_sum_rossby(rain_sum_rossby < 0.01) = NaN ;
     rain_sum_rossby_westward_portion(rain_sum_rossby_westward_portion < 0.01) = NaN ;
     
-    n_days = grand_master_end_time - grand_master_start_time + DT/24.0;
+    %n_days = grand_master_end_time - grand_master_start_time + DT/24.0;
+    n_days = 3.0 * sum(keep_time) / 24.0;
     DATA=rain_sum/n_days ; %log(rain_sum) ;
     DATA_mjo=rain_sum_mjo/n_days ; %log(rain_sum) ;
     DATA_mjo_eastward_portion=rain_sum_mjo_eastward_portion/n_days ; %log(rain_sum) ;
@@ -489,7 +373,7 @@ for year1=[2004]
 
 
     
-    fileOutBase=['rain_map2_full_year_all_lpts__',y1_y2];
+    fileOutBase=['rain_map2_full_year_all_lpts__',y1_y2,'__djf'];
 
     
     eval(['!mkdir -p ',PLOT_DIR])
@@ -502,6 +386,7 @@ for year1=[2004]
     %% .mat file output.
     %%
 
+    
     fout=[];
     fout.lon = F.lon;
     fout.lat = F.lat;
