@@ -1,6 +1,10 @@
 # Ignore emacs temp backup files
 *~
 
+# Ignore images.
+*.png
+*.gif
+
 # Ignore data
 *.nc
 *.mat
