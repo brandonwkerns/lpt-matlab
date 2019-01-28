@@ -156,7 +156,9 @@ end % END Loop over Dates
 %% Some TCs were close enough to be considered a single track. Allow "center jumps".
 %%
 %combineCloseProximityTCs_by_centroid(10.0,3.0) ;
-combineCloseProximityTCs_by_area(OPT.ACCUMULATION_PERIOD/24.0) ;
+datestr(now)
+combineCloseProximityTCs_by_area(OPT.ACCUMULATION_PERIOD/24.0) 
+datestr(now)
 
 %%
 %% Now combining the merging tracks which were duplicates.
@@ -784,78 +786,88 @@ end
 
 
 function combineCloseProximityTCs_by_area(maxCombineTimeDiff) ;
-
+  
+  disp(' --- ') 
+  disp(['Allow center jumps if they overlap within: ', num2str(24*maxCombineTimeDiff), ' hours.']) 
+  disp(' --- ') 
+  
   TC_eliminate_list=[];
-
-  for ii=1:numel(TIMECLUSTERS)
-
+  
+  imax = numel(TIMECLUSTERS);
+  
+  for ii=1:imax
+    
+    disp(['-- Working on ', num2str(ii), ' of ', num2str(imax), '.'])
+    
     otherClusters=setdiff(1:numel(TIMECLUSTERS),ii);
-
-    %Test for GG_before
+    
+    %%Test for GG_before
     for ii_before=[otherClusters]
-        jumpTime=CE.time(TIMECLUSTERS(ii).ceid(1)) - ...
-                CE.time(TIMECLUSTERS(ii_before).ceid(end));
+      jumpTime=CE.time(TIMECLUSTERS(ii).ceid(1)) - ...
+               CE.time(TIMECLUSTERS(ii_before).ceid(end));
+
+      %% If it's not within the maxCombineTimeDiff, no need to consider it any further.
+      if (jumpTime > 0.0 & jumpTime < maxCombineTimeDiff+0.01)
 
         dLON1=CE.lon(TIMECLUSTERS(ii).ceid(1)) - ...
-                CE.lon(TIMECLUSTERS(ii_before).ceid(end));
-
+              CE.lon(TIMECLUSTERS(ii_before).ceid(end));
+	
         dLAT1=CE.lat(TIMECLUSTERS(ii).ceid(1)) - ...
-                CE.lat(TIMECLUSTERS(ii_before).ceid(end));
-
+              CE.lat(TIMECLUSTERS(ii_before).ceid(end));
+	
         if ( sqrt(dLON1.^2 + dLAT1.^2 ) > maxDistToConnect )
-            continue
+	  continue
         end
 
-       X1=CE.pixels(TIMECLUSTERS(ii).ceid(1)).x ;
-       Y1=CE.pixels(TIMECLUSTERS(ii).ceid(1)).y ;
+	%% If it is within the time window, I need to calculate the overlap.
+	X1=CE.pixels(TIMECLUSTERS(ii).ceid(1)).x ;
+	Y1=CE.pixels(TIMECLUSTERS(ii).ceid(1)).y ;
+	
+	X2=CE.pixels(TIMECLUSTERS(ii_before).ceid(end)).x ;
+	Y2=CE.pixels(TIMECLUSTERS(ii_before).ceid(end)).y ;
+	
+	hits=[] ;
 
-       X2=CE.pixels(TIMECLUSTERS(ii_before).ceid(end)).x ;
-       Y2=CE.pixels(TIMECLUSTERS(ii_before).ceid(end)).y ;
-
-       hits=[] ;
-
-       A=[X1,Y1] ;
-       B=[X2,Y2] ;
-
-       HITS=intersect(A,B,'rows') ;
-       nHits=size(HITS,1);
-
-       if ( (jumpTime > 0.0 & jumpTime < maxCombineTimeDiff+0.01) & ...
-            (nHits/numel(X1) > OPT.TRACKING_MINIMUM_OVERLAP_FRAC | ...
+	A=[X1,Y1] ;
+	B=[X2,Y2] ;
+	
+	HITS=intersect(A,B,'rows') ;
+	nHits=size(HITS,1);
+	
+	if (nHits/numel(X1) > OPT.TRACKING_MINIMUM_OVERLAP_FRAC | ...
             nHits/numel(X2) > OPT.TRACKING_MINIMUM_OVERLAP_FRAC | ...
-            nHits > OPT.TRACKING_MINIMUM_OVERLAP_POINTS) )
-
-        if verbose
-          disp(['Combined LPTs: ',num2str(ii_before),' and ',...
-                num2str(ii),' in to ',num2str(nextClusterID), ...
-                ' (',num2str(24*jumpTime),' h, ',...
-                num2str(sqrt(dLON1.^2 + dLAT1.^2 )),' deg. jump).'])
-        end
-
-        startNewTimeCluster(nextClusterID) ;
-        TIMECLUSTERS(nextClusterID).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
-                            TIMECLUSTERS(ii_before).ceid]));
-        nextClusterID = nextClusterID + 1 ;
-
-        TC_eliminate_list=[TC_eliminate_list, ii];
-        TC_eliminate_list=[TC_eliminate_list, ii_before];
-
+            nHits > OPT.TRACKING_MINIMUM_OVERLAP_POINTS)
+							  
+	  if verbose
+	    disp(['Combined LPTs: ',num2str(ii_before),' and ',...
+		  num2str(ii),' in to ',num2str(nextClusterID), ...
+		  ' (',num2str(24*jumpTime),' h, ',...
+		  num2str(sqrt(dLON1.^2 + dLAT1.^2 )),' deg. jump).'])
+	  end
+	  
+	  startNewTimeCluster(nextClusterID) ;
+          TIMECLUSTERS(nextClusterID).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
+							TIMECLUSTERS(ii_before).ceid]));
+          nextClusterID = nextClusterID + 1 ;
+	  
+          TC_eliminate_list=[TC_eliminate_list, ii];
+          TC_eliminate_list=[TC_eliminate_list, ii_before];
+	  
+	end
+	
       end
     end
   end
-
+  
   TC_eliminate_list = unique(TC_eliminate_list);
-
+  
   if verbose
-    disp(['Removed the following due to being absorbed into other tracks: ',num2str(TC_eliminate_list)])
-    disp(['(Database also re-ordered.)'])
+    disp(['Removing the following due to having center jumps with other tracks: ',num2str(TC_eliminate_list)])
   end
-
+  
   TIMECLUSTERS(TC_eliminate_list)=[];
-
+  
 end
-
-
 
 
 
