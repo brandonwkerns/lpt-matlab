@@ -260,27 +260,27 @@ function  matchingClusterID=matchingTimeCluster(theCE,timeToSearch);
     return
   else
 
-
     %% Loop through previous time clusters, looking for a match.
-
     for ii=1:numel(TIMECLUSTERS)
-
 
       times=[] ;
 
       for  jj=[TIMECLUSTERS(ii).ceid]
 
-        %% Check distance here.
-        dLON1=CE.lon(jj)-CE.lon(theCE) ;
-        dLAT1=CE.lat(jj)-CE.lat(theCE) ;
-
-        if ( sqrt(dLON1.^2 + dLAT1.^2 ) > maxDistToConnect )
-          continue
-        end
-
-
+	%% If it's not at the right time, then no need to consider it further.
         if (CE.time(jj) == timeToSearch)
 
+          %% Check distance here.
+	  %% I can skip it if it is beyond maxDistToConnect.
+          dLON1=CE.lon(jj)-CE.lon(theCE) ;
+          dLAT1=CE.lat(jj)-CE.lat(theCE) ;
+	  
+          if ( sqrt(dLON1.^2 + dLAT1.^2 ) > maxDistToConnect )
+            continue
+          end
+
+	  %% OK, it is within maxDistToConnect, so determine how much overlap.
+	  
           X1=CE.pixels(jj).x ;
           Y1=CE.pixels(jj).y ;
 
