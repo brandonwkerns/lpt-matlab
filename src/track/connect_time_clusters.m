@@ -50,7 +50,6 @@ nextClusterID=1 ;  %Start time cluster ID count at 1.
 allDates=[] ;
 
 DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
-% DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN1+31;
 
 %%
 %% Loop forward in time.
@@ -155,10 +154,7 @@ end % END Loop over Dates
 %%
 %% Some TCs were close enough to be considered a single track. Allow "center jumps".
 %%
-%combineCloseProximityTCs_by_centroid(10.0,3.0) ;
-datestr(now)
 combineCloseProximityTCs_by_area(OPT.ACCUMULATION_PERIOD/24.0) 
-datestr(now)
 
 %%
 %% Now combining the merging tracks which were duplicates.
@@ -171,13 +167,12 @@ elseif OPT.SPLITTING_AND_MERGING_METHOD == 2
 elseif OPT.SPLITTING_AND_MERGING_METHOD == 3
   mergeDuplicateTCs() ;
 end
-%% Otherwise, keep each of the individual overlapping tracks.
+%% Otherwise (e.g., OPT.SPLITTING_AND_MERGING_METHOD == 4), keep each of the individual overlapping tracks.
 
 %%
 %% Take out time clusters with insufficient duration.
 %%
 
-% removeShortLivedTCs(3.0) ;
 removeShortLivedTCs(minDuration) ;
 TIMECLUSTERS = eliminate_overlapping_tracks(TIMECLUSTERS, verbose);
 TIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
@@ -188,7 +183,6 @@ TIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
 %%
 
 disp('Calculating tracking parameters.')
-%calcTrackingParameters() ;
 TIMECLUSTERS = calc_tracking_parameters(TIMECLUSTERS, CE);
 
 if (OPT.CALC_MASK == true)
