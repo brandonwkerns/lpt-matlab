@@ -180,7 +180,6 @@ end
 % removeShortLivedTCs(3.0) ;
 removeShortLivedTCs(minDuration) ;
 TIMECLUSTERS = eliminate_overlapping_tracks(TIMECLUSTERS, verbose);
-TIMECLUSTERS = eliminate_duplicate_tracks(TIMECLUSTERS, verbose);
 TIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
 
 
