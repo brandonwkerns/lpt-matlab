@@ -83,7 +83,6 @@ FEATURE_MAX_LAT = 15.0;
 %%
 
 TRACKING_VERBOSE = true;
-CALC_MASK = false; % Calcluate mask arrays. WARNING: Takes ALOT of memory and MUCH longer to run!!!
 
 % Overlap criteria. Minimum Minimum feature size is based on the number of points.
 % If either the fraction or points overlap is satisfied, the LPT features

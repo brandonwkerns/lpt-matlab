@@ -185,19 +185,9 @@ TIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
 disp('Calculating tracking parameters.')
 TIMECLUSTERS = calc_tracking_parameters(TIMECLUSTERS, CE);
 
-if (OPT.CALC_MASK == true)
-  disp('Calculating mask arrays.')
-  maskArrays = calcMaskArrays(TIMECLUSTERS, CE, DN, OPT) ;
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%  Output  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
-
 
 dn0 = OPT.DN1;%f0.time;
 dn9 = OPT.DN2;%f9.time;
@@ -216,22 +206,20 @@ HH9 = sprintf('%02d', hour9);
 
 ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
 
-
 disp('Writing Output.')
-FMT='        %4d%02d%02d%02d %7d %10.2f %10.2f %1d\n' ;
+%FMT='        %4d%02d%02d%02d %7d %10.2f %10.2f %1d\n' ;
 
-
-% Ascii output
+%% Ascii output
 fileout=['LONGSTATS_lpt_',ymd0_ymd9] ;
 disp(fileout)
 lpt_systems_output_ascii(TIMECLUSTERS, fileout);
 
-
+%% NetCDF Output
 netcdf_output_fn=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.lptALL.nc'] ;
 disp(netcdf_output_fn);
 lpt_systems_output_netcdf(TIMECLUSTERS, CE, netcdf_output_fn, OPT);
 
-
+%% Mat file output
 fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
 disp(fileout_mat);
 lpt_systems_output_mat(TIMECLUSTERS, CE, fileout_mat)
