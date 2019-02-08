@@ -28,6 +28,10 @@ function NEWTIMECLUSTERS = eliminate_overlapping_tracks(TIMECLUSTERS, verbose)
       if (numel(NEWTIMECLUSTERS(ii).ceid) > 0 & ...
           numel(NEWTIMECLUSTERS(jj).ceid) > 0 )
 
+	if numel(intersect(NEWTIMECLUSTERS(ii).ceid, NEWTIMECLUSTERS(jj).ceid)) < 1
+	  continue
+	end
+	
         if all(ismember(NEWTIMECLUSTERS(ii).ceid, NEWTIMECLUSTERS(jj).ceid)) | all(ismember(NEWTIMECLUSTERS(jj).ceid, NEWTIMECLUSTERS(ii).ceid))
 
 	  NEWTIMECLUSTERS(ii).ceid = unique([NEWTIMECLUSTERS(ii).ceid, NEWTIMECLUSTERS(jj).ceid]);
