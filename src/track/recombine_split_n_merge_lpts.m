@@ -11,30 +11,23 @@ eval('!rm temp.mat')
 
 do_plotting=0;
 
-%% Clumps of Worms
-%clumps_file = ['../../data/',CASE_LABEL,'/processed/',...
-%               'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
-%               sprintf('%d',ACCUMULATION_PERIOD), ...
-%               'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation/',...
-%               'clumps_of_worms.txt'];
-clumps_file = './clumps_of_worms.txt';
-
-clumps = dlmread(clumps_file,'',1,0);
-
 
 %% Directories
-PROCESSED_DATA_DIR = './';
-
-%{
 PROCESSED_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
-%}
+
 OBJECTS_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                     'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                     sprintf('%d',ACCUMULATION_PERIOD), ...
                     'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/objects'];
+
+
+%% Clumps of Worms
+clumps_file = [PROCESSED_DATA_DIR, '/clumps_of_worms.txt'];
+clumps = dlmread(clumps_file,'',1,0);
+
 
 
 %%
@@ -44,7 +37,7 @@ OBJECTS_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
 max_n_splitting_times = 999 ; % Max splitting times to recombine.
 n_splitting_times_collect = [];
 
-for year1 = [2007] %1998:2017  ;
+for year1 = [2006] %1998:2017  ;
 
     year2=year1+1 ;
 
@@ -54,20 +47,12 @@ for year1 = [2007] %1998:2017  ;
     y1_y2=[yyyy1,'_',yyyy2] ;
 
     disp(['########### ',y1_y2, ' ###########']) ;
-
-
-    %% Read LP Objects
-    %dir0 = dir([OBJECTS_DATA_DIR,'/objects_',num2str(year1),'*.mat']);
-    %disp([OBJECTS_DATA_DIR,'/', dir0(1).name])
-    %OBJECTS = load([OBJECTS_DATA_DIR,'/', dir0(1).name]) ;
-
     
     %% Read LPT systems
     dir0 = dir([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',num2str(year1),'*.mat']);
     fn_in = [PROCESSED_DATA_DIR,'/', dir0(1).name];
     disp(fn_in)
     G = load(fn_in) ;
-
 
     for iiii = 2:30
       if isfield(G, ['TIMECLUSTERS', num2str(iiii)])
@@ -78,6 +63,16 @@ for year1 = [2007] %1998:2017  ;
     
     lpts_to_eliminate = [];
 
+
+
+
+
+    %% Initialize an struct array for LP object (id and time) storage.
+    OBJ_storage.objid = [];
+    OBJ_storage.time = [];
+    
+
+    
     
     %% Get "clumps of worms" for this year.
     clump_idx_this_year = find(clumps(:,1) == year1);
@@ -119,12 +114,21 @@ for year1 = [2007] %1998:2017  ;
 	
           GG=G.TIMECLUSTERS(ii) ;	
 
-	  %GGtimes=[GG.obj.time];
 	  GGobjid=[GG.objid];
 	  GGtimes = [];
 	  for id = 1:numel(GGobjid)
-	    OBJ = load_obj_data(OBJECTS_DATA_DIR, GGobjid(id));
-	    GGtimes = [GGtimes, OBJ.time];
+	    %% Use the storage struct array if it has already been read.
+	    %% Otherwise, read the OBJ time and add it to storage.
+	    if (sum(OBJ_storage.objid == GGobjid(id)) > 0)
+	      GGtimes = [GGtimes, OBJ_storage.time(OBJ_storage.objid == GGobjid(id))];
+	    else
+	      OBJ = load_obj_data(OBJECTS_DATA_DIR, GGobjid(id));
+	      GGtimes = [GGtimes, OBJ.time];
+	      
+	      %% Append to storage so I don't need to read this one again.
+	      OBJ_storage.time = [OBJ_storage.time, OBJ.time];
+	      OBJ_storage.objid = [OBJ_storage.objid, GGobjid(id)];	      
+	    end
 	  end
 	  
 	  %%
@@ -132,7 +136,7 @@ for year1 = [2007] %1998:2017  ;
 	  %% in common *except* for a time period
 	  %% that's not the beginning or end of the tracks.
 	  %% A split somewhere in the middle
-	  %% of the track that quickly comes
+	  %% of the track that comes
 	  %% back together into a single track.
 	  %%
 	  
@@ -146,13 +150,21 @@ for year1 = [2007] %1998:2017  ;
 	      continue
 	    end
 
-	    %HHtimes=[HH.obj.time];
-	    %HHobjid=[HH.obj.objid];
 	    HHobjid=[HH.objid];
 	    HHtimes = [];
 	    for id = 1:numel(HHobjid)
-	      OBJ = load_obj_data(OBJECTS_DATA_DIR, HHobjid(id));
-	      HHtimes = [HHtimes, OBJ.time];
+	      %% Use the storage struct array if it has already been read.
+	      %% Otherwise, read the OBJ time and add it to storage.
+	      if (sum(OBJ_storage.objid == HHobjid(id)) > 0)
+		HHtimes = [HHtimes, OBJ_storage.time(OBJ_storage.objid == HHobjid(id))];
+	      else
+		OBJ = load_obj_data(OBJECTS_DATA_DIR, HHobjid(id));
+		HHtimes = [HHtimes, OBJ.time];
+		
+		%% Append to storage so I don't need to read this one again.
+		OBJ_storage.time = [OBJ_storage.time, OBJ.time];
+		OBJ_storage.objid = [OBJ_storage.objid, HHobjid(id)];	      
+	      end
 	    end
 
 	    %% To be a candidate for recombining, the following must apply:
@@ -211,9 +223,7 @@ for year1 = [2007] %1998:2017  ;
 	    
 	    split_and_merge_ids = [];
 	    for tttt = split_and_merge_times
-%split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],[find(OBJECTS.time == tttt)])];
 	      split_and_merge_ids = [split_and_merge_ids, GGobjid(GGtimes == tttt)];
-%split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],[find(OBJECTS.time == tttt)])];
 	      split_and_merge_ids = [split_and_merge_ids, HHobjid(HHtimes == tttt)];
 	    end
 	    split_and_merge_ids = unique(split_and_merge_ids);
