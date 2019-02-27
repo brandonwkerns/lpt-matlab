@@ -7,22 +7,11 @@ close all
 addpath('../../config')
 options
 
-PROCESSED_DATA_DIR = './' ;
-EASTWARD_PROP_DATA_DIR = './' ;
 
-%{
 PROCESSED_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
-
-EASTWARD_PROP_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
-                      'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
-                       sprintf('%d',ACCUMULATION_PERIOD), ...
-                       'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation'];
-%}
-			  
-eval(['!mkdir -p ', EASTWARD_PROP_DATA_DIR])
 
 
 % For output table files.
@@ -30,11 +19,11 @@ FMT=['%10d%10d%10d%10.2f  %4d%0.2d%0.2d%0.2d  %4d%0.2d%0.2d%0.2d\n'];
 
 header='      year     index     clump  duration       begin         end    ';
 
-fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.txt'],'w');
+fid_clumps_of_worms = fopen([PROCESSED_DATA_DIR, '/clumps_of_worms.txt'], 'w');
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
-for year1=1998:2018 
+for year1 = 1998:2018 
 
   year2=year1+1 ;
 

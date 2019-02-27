@@ -264,18 +264,21 @@ ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
 disp('Writing Output.')
 %FMT='        %4d%02d%02d%02d %7d %10.2f %10.2f %1d\n' ;
 
+%% Make directory if it doesn't exist.
+mkdir(PROCESSED_DATA_DIR_OUT);
+
 %% Ascii output
-fileout=['LONGSTATS_lpt_',ymd0_ymd9] ;
+fileout=[PROCESSED_DATA_DIR_OUT,'/LONGSTATS_lpt_',ymd0_ymd9] ;
 disp(fileout)
 lpt_systems_output_ascii(TIMECLUSTERS, fileout);
 
 %% NetCDF Output
-netcdf_output_fn=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.lptALL.nc'] ;
+netcdf_output_fn=[PROCESSED_DATA_DIR_OUT,'/TIMECLUSTERS_lpt_',ymd0_ymd9,'.lptALL.nc'] ;
 disp(netcdf_output_fn);
 lpt_systems_output_netcdf(TIMECLUSTERS, netcdf_output_fn, OPT);
 
 %% Mat file output
-fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
+fileout_mat=[PROCESSED_DATA_DIR_OUT,'/TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
 disp(fileout_mat);
 lpt_systems_output_mat(TIMECLUSTERS, fileout_mat)
 

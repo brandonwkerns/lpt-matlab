@@ -44,7 +44,7 @@ OBJECTS_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
 max_n_splitting_times = 999 ; % Max splitting times to recombine.
 n_splitting_times_collect = [];
 
-for year1 = [2011] %1998:2017  ;
+for year1 = [2007] %1998:2017  ;
 
     year2=year1+1 ;
 
