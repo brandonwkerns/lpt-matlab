@@ -12,16 +12,16 @@ yyyy2=num2str(year2) ;
 
 y1_y2=[yyyy1,'_',yyyy2] ;
 
-outdir=['../data/trmm/interim/timelon'];
+outdir=['../../data/trmm/interim/timelon'];
 outfile=[outdir,'/rain_hov_',y1_y2,'_15deg_3day_full_year.mat'] ;
-mainDir='../data/trmm/interim/accumulated/72h' ;
+mainDir='../../data/trmm_keep_overlapping_tracks_no_jump_cutoff/interim/accumulated/72h' ;
 
 lat1=-14.875 ;
 lat2=14.875 ;
 
 dateNumNow=now() ;
 %dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year2,6,1,0,0,0) ;
-dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year1,11,27,21,0,0) ;
+dateNum30=datenum(year1,6,1,0,0,0):3:datenum(year2,2,25,21,0,0) ;
 
 %% Set up arrays
 lon=0.875:.25:359.875 ;

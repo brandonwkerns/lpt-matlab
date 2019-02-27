@@ -11,26 +11,28 @@ save('temp.mat');
 OPT = load('temp.mat');
 eval('!rm temp.mat')
 
-do_plotting=0;
+do_plotting=1;
 
 %% Clumps of Worms
-clumps_file = ['../../data/',CASE_LABEL,'/processed/',...
-               'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
-               sprintf('%d',ACCUMULATION_PERIOD), ...
-               'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation/',...
-               'clumps_of_worms.rejoin.txt'];
-
-
+%clumps_file = ['../../data/',CASE_LABEL,'/processed/',...
+%               'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
+%               sprintf('%d',ACCUMULATION_PERIOD), ...
+%               'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation/',...
+%               'clumps_of_worms.rejoin.txt'];
+clumps_file = './clumps_of_worms.rejoin.txt';
 
 clumps = dlmread(clumps_file,'',1,0);
 
 
 %% Directories
+PROCESSED_DATA_DIR = './';
+
+%{
 PROCESSED_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
-
+%}
 OBJECTS_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                     'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                     sprintf('%d',ACCUMULATION_PERIOD), ...
@@ -44,7 +46,7 @@ min_time_to_maintain_split = 3.0; % days
 max_n_splitting_times = 999 ; % Max splitting times to recombine.
 n_splitting_times_collect = [];
 
-for year1 = [2017] %1998:2017  ;
+for year1 = [2011] %1998:2017  ;
 
     year2=year1+1 ;
 
@@ -85,8 +87,8 @@ for year1 = [2017] %1998:2017  ;
     lptid_this_year = clumps(clump_idx_this_year, 2)';
     clump_num_this_year = clumps(clump_idx_this_year, 3)';
     
-    %for this_clump_num = [1] %[unique(clump_num_this_year)]
-    for this_clump_num = [unique(clump_num_this_year)]
+    for this_clump_num = [3] %[unique(clump_num_this_year)]
+    %for this_clump_num = [unique(clump_num_this_year)]
 
       disp(['----------- Clump #', num2str(this_clump_num), ' -----------'])
       
@@ -107,8 +109,10 @@ for year1 = [2017] %1998:2017  ;
       end
 
       Gori = G;
-
+      %{
+      %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       disp('MERGING')
+      %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
       
       count=0;
@@ -122,6 +126,9 @@ for year1 = [2017] %1998:2017  ;
           disp([num2str(ii), ' of ', num2str(numel(G.TIMECLUSTERS))])
 	
           GG=G.TIMECLUSTERS(ii) ;	
+
+	  GGtimes=[GG.obj.time];
+	  GGobjid=[GG.obj.objid];
 	  
 	  %%
 	  %% Search for combos of tracks that have everything
@@ -137,25 +144,55 @@ for year1 = [2017] %1998:2017  ;
 	  for jj = [other_lptids_in_this_clump]
 
 	    HH=G.TIMECLUSTERS(jj) ;
-	    
-	    if (numel(HH.ceid) < 1)
+
+	    if (numel(HH.objid) < 1)
 	      continue
 	    end
+
+	    HHtimes=[HH.obj.time];
+	    HHobjid=[HH.obj.objid];
+	    
 	    
 	    %% To be a candidate for recombining, the following must apply:
 	    %% 1. The have a time period of splitting and/or merging.
 	    %% 2. The splitting/merging period is either at the beginning or end of the track.
 	    %% 3. The splitting/merging period should be < 3 days.
 	    
-	    intersections = intersect([GG.ceid], [HH.ceid]);
-	    union_ids = union([GG.ceid], [HH.ceid]);
-	    union_times = OBJECTS.time(union_ids);
+	    intersections = intersect([GG.objid], [HH.objid]);
+	    union_ids = union([GG.objid], [HH.objid]);
+	    %union_times = OBJECTS.time(union_ids);
 
-	    intersection_times = OBJECTS.time(intersections);
+	    %intersection_times = OBJECTS.time(intersections);
+	    intersection_times = [];
+	    for this_objid = [intersections]
+	      %this_OBJ = load_obj_data(OBJECTS_DATA_DIR, this_objid);
+	      intersection_times = [intersection_times, HHtimes(HHobjid == this_objid)];
+	    end
+	    
+	    union_times = [];
+	    for this_objid = [union_ids]
+	      %this_OBJ = load_obj_data(OBJECTS_DATA_DIR, this_objid);
+	      if sum(HHobjid == this_objid) > 0
+		union_times = [union_times, HHtimes(HHobjid == this_objid)];
+	      else
+		union_times = [union_times, GGtimes(GGobjid == this_objid)];
+	      end
+	    end
+	    %disp([numel(union_ids),numel(union_times)])
+	    if (numel(union_ids) ~= numel(union_times))
+	      disp('WARNING')
+	    end
+
+	    %union_times = unique(union_times);
+	    
 	    splitting_times = [];
 	    for ttt = [union_times]
-	      idx_GG = intersect([GG.ceid], find(OBJECTS.time == ttt));
-	      idx_HH = intersect([HH.ceid], find(OBJECTS.time == ttt));
+	      %idx_GG = intersect([GG.objid], find(OBJECTS.time == ttt));
+	      %idx_HH = intersect([HH.objid], find(OBJECTS.time == ttt));
+	      idx_GG = intersect([GG.objid], union_ids);
+	      idx_HH = intersect([HH.objid], union_ids);
+
+	      
 	      if (numel(idx_GG) < 1 | numel(idx_HH) < 1)
 		continue
 	      end
@@ -164,6 +201,7 @@ for year1 = [2017] %1998:2017  ;
 	      end
 	    end
 
+	    %% -- Left off here. --
 
 	    %% In some cases with multiple iterations, a time can be both a splitting
 	    %% and an intersecting time. Still consider these times for LPT branch merger.
@@ -197,8 +235,10 @@ for year1 = [2017] %1998:2017  ;
 	    
 	    split_and_merge_ids = [];
 	    for tttt = split_and_merge_times
-	      split_and_merge_ids = [split_and_merge_ids, intersect([GG.ceid],[find(OBJECTS.time == tttt)])];
-	      split_and_merge_ids = [split_and_merge_ids, intersect([HH.ceid],[find(OBJECTS.time == tttt)])];
+	      %split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],[find(OBJECTS.time == tttt)])];
+	      %split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],[find(OBJECTS.time == tttt)])];
+	      split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],union_ids(union_times == tttt))];
+	      split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],union_ids(union_times == tttt))];
 	    end
 	    split_and_merge_ids = unique(split_and_merge_ids);
 	    
@@ -209,10 +249,10 @@ for year1 = [2017] %1998:2017  ;
 	    
 
 	    % Make sure splitting_obj_ids has entries from *both* tracks.
-	    if numel(intersect([GG.ceid], [split_and_merge_ids])) < 1
+	    if numel(intersect([GG.objid], [split_and_merge_ids])) < 1
 	      continue
 	    end
-	    if numel(intersect([HH.ceid], [split_and_merge_ids])) < 1
+	    if numel(intersect([HH.objid], [split_and_merge_ids])) < 1
 	      continue
 	    end
 	    
@@ -224,10 +264,10 @@ for year1 = [2017] %1998:2017  ;
 	    %% Then, we can assign the relevant object ids to each of those LPT branches.
 	    	
 	    for jjjj = [other_lptids_in_this_clump]
-	      if ( numel(intersect([G.TIMECLUSTERS(jjjj).ceid], [split_and_merge_ids])) > 0)
+	      if ( numel(intersect([G.TIMECLUSTERS(jjjj).objid], [split_and_merge_ids])) > 0)
 		more_to_do = 1; % Assume there will be more cases, and trigger the loop again.
-		G.TIMECLUSTERS(ii).ceid = unique([G.TIMECLUSTERS(ii).ceid, split_and_merge_ids]);
-		G.TIMECLUSTERS(jjjj).ceid = unique([G.TIMECLUSTERS(jjjj).ceid, split_and_merge_ids]);
+		G.TIMECLUSTERS(ii).objid = unique([G.TIMECLUSTERS(ii).objid, split_and_merge_ids]);
+		G.TIMECLUSTERS(jjjj).objid = unique([G.TIMECLUSTERS(jjjj).objid, split_and_merge_ids]);
 	      end
 	    end
 
@@ -254,14 +294,17 @@ for year1 = [2017] %1998:2017  ;
 	  
 	end
       end
-
+      %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
       
-      G.TIMECLUSTERS = calc_tracking_parameters(G.TIMECLUSTERS, OBJECTS);
+      G.TIMECLUSTERS = calc_tracking_parameters(G.TIMECLUSTERS, OBJECTS_DATA_DIR);
+
+      %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       disp('SPLITTING')
+      %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
       count=0;
@@ -276,6 +319,9 @@ for year1 = [2017] %1998:2017  ;
           disp([num2str(ii), ' of ', num2str(numel(G.TIMECLUSTERS))])
 	
           GG=G.TIMECLUSTERS(ii) ;	
+
+	  GGtimes=[GG.obj.time];
+	  GGobjid=[GG.obj.objid];
 	  
 	  %%
 	  %% Search for combos of tracks that have everything
@@ -292,24 +338,54 @@ for year1 = [2017] %1998:2017  ;
 
 	    HH=G.TIMECLUSTERS(jj) ;
 	    
-	    if (numel(HH.ceid) < 1)
+	    if (numel(HH.objid) < 1)
 	      continue
 	    end
+
+	    HHtimes=[HH.obj.time];
+	    HHobjid=[HH.obj.objid];
+
 	    
 	    %% To be a candidate for recombining, the following must apply:
 	    %% 1. The have a time period of splitting and/or merging.
 	    %% 2. The splitting/merging period is either at the beginning or end of the track.
 	    %% 3. The splitting/merging period should be < 3 days.
 	    
-	    intersections = intersect([GG.ceid], [HH.ceid]);
-	    union_ids = union([GG.ceid], [HH.ceid]);
-	    union_times = OBJECTS.time(union_ids);
+	    intersections = intersect([GG.objid], [HH.objid]);
+	    union_ids = union([GG.objid], [HH.objid]);
+	    %union_times = OBJECTS.time(union_ids);
 
-	    intersection_times = OBJECTS.time(intersections);
+	    intersection_times = [];
+	    for this_objid = [intersections]
+	      %this_OBJ = load_obj_data(OBJECTS_DATA_DIR, this_objid);
+	      intersection_times = [intersection_times, HHtimes(HHobjid == this_objid)];
+	    end
+	    
+	    union_times = [];
+	    for this_objid = [union_ids]
+	      %this_OBJ = load_obj_data(OBJECTS_DATA_DIR, this_objid);
+	      if sum(HHobjid == this_objid) > 0
+		union_times = [union_times, HHtimes(HHobjid == this_objid)];
+	      else
+		union_times = [union_times, GGtimes(GGobjid == this_objid)];
+	      end
+	    end
+	    %disp([numel(union_ids),numel(union_times)])
+	    if (numel(union_ids) ~= numel(union_times))
+	      disp('WARNING')
+	    end
+	    
+	    %intersection_times = OBJECTS.time(intersections);
+
+
 	    splitting_times = [];
 	    for ttt = [union_times]
-	      idx_GG = intersect([GG.ceid], find(OBJECTS.time == ttt));
-	      idx_HH = intersect([HH.ceid], find(OBJECTS.time == ttt));
+	      %idx_GG = intersect([GG.objid], find(OBJECTS.time == ttt));
+	      %idx_HH = intersect([HH.objid], find(OBJECTS.time == ttt));
+
+	      idx_GG = intersect([GG.objid], union_ids);
+	      idx_HH = intersect([HH.objid], union_ids);
+
 	      if (numel(idx_GG) < 1 | numel(idx_HH) < 1)
 		continue
 	      end
@@ -349,8 +425,10 @@ for year1 = [2017] %1998:2017  ;
 	    
 	    split_and_merge_ids = [];
 	    for tttt = split_and_merge_times
-	      split_and_merge_ids = [split_and_merge_ids, intersect([GG.ceid],[find(OBJECTS.time == tttt)])];
-	      split_and_merge_ids = [split_and_merge_ids, intersect([HH.ceid],[find(OBJECTS.time == tttt)])];
+	      %split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],[find(OBJECTS.time == tttt)])];
+	      %split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],[find(OBJECTS.time == tttt)])];
+	      split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],union_ids(union_times == tttt))];
+	      split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],union_ids(union_times == tttt))];
 	    end
 	    split_and_merge_ids = unique(split_and_merge_ids);
 	    
@@ -359,10 +437,10 @@ for year1 = [2017] %1998:2017  ;
 	    end
 
 	 % Make sure splitting_obj_ids has entries from *both* tracks.
-	    if numel(intersect([GG.ceid], [split_and_merge_ids])) < 1
+	    if numel(intersect([GG.objid], [split_and_merge_ids])) < 1
 	      continue
 	    end
-	    if numel(intersect([HH.ceid], [split_and_merge_ids])) < 1
+	    if numel(intersect([HH.objid], [split_and_merge_ids])) < 1
 	      continue
 	    end
 
@@ -373,19 +451,19 @@ for year1 = [2017] %1998:2017  ;
 	    
 		
 	    for jjjj = [other_lptids_in_this_clump]
-	      if ( numel(intersect([G.TIMECLUSTERS(jjjj).ceid], [split_and_merge_ids])) > 0)
+	      if ( numel(intersect([G.TIMECLUSTERS(jjjj).objid], [split_and_merge_ids])) > 0)
 		more_to_do = 1; % Assume there will be more cases, and trigger the loop again.
-		G.TIMECLUSTERS(ii).ceid = unique([G.TIMECLUSTERS(ii).ceid, split_and_merge_ids]);
-		G.TIMECLUSTERS(jjjj).ceid = unique([G.TIMECLUSTERS(jjjj).ceid, split_and_merge_ids]);
+		G.TIMECLUSTERS(ii).objid = unique([G.TIMECLUSTERS(ii).objid, split_and_merge_ids]);
+		G.TIMECLUSTERS(jjjj).objid = unique([G.TIMECLUSTERS(jjjj).objid, split_and_merge_ids]);
 
-		%{
+		
 		disp('-----------')
 		datevec(max(intersection_times))
 		'with'
 		datevec(max(splitting_times))
 
 		max(split_and_merge_times) - min(split_and_merge_times)
-		%}
+		
 	      end
 	    end
 
@@ -394,6 +472,8 @@ for year1 = [2017] %1998:2017  ;
 	      disp('Starting a new iteration.')
 	    end
 
+	    break
+	    
 	  end
 	  	  	  
 	  if more_to_do == 1
@@ -405,15 +485,17 @@ for year1 = [2017] %1998:2017  ;
 	    break
 	  end
 
-
+	  break
 	  
 	end
       end
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      
+
+      %{
       
       G.TIMECLUSTERS = calc_tracking_parameters(G.TIMECLUSTERS, OBJECTS);
       disp('SPLIT-THEN-MERGE')
@@ -449,7 +531,7 @@ for year1 = [2017] %1998:2017  ;
 
 	    HH=G.TIMECLUSTERS(jj) ;
 	    
-	    if (numel(HH.ceid) < 1)
+	    if (numel(HH.objid) < 1)
 	      continue
 	    end
 	    
@@ -457,15 +539,15 @@ for year1 = [2017] %1998:2017  ;
 	    %% 1. The have a time period of splitting and/or merging.
 	    %% 2. The splitting/merging period is NOT at the beginning or end of the track.
 	    
-	    intersections = intersect([GG.ceid], [HH.ceid]);
-	    union_ids = union([GG.ceid], [HH.ceid]);
+	    intersections = intersect([GG.objid], [HH.objid]);
+	    union_ids = union([GG.objid], [HH.objid]);
 	    union_times = OBJECTS.time(union_ids);
 
 	    intersection_times = OBJECTS.time(intersections);
 	    splitting_times = [];
 	    for ttt = [union_times]
-	      idx_GG = intersect([GG.ceid], find(OBJECTS.time == ttt));
-	      idx_HH = intersect([HH.ceid], find(OBJECTS.time == ttt));
+	      idx_GG = intersect([GG.objid], find(OBJECTS.time == ttt));
+	      idx_HH = intersect([HH.objid], find(OBJECTS.time == ttt));
 	      
 	      %if (numel(idx_GG) < 1 | numel(idx_HH) < 1)
 	      %  continue
@@ -510,8 +592,8 @@ for year1 = [2017] %1998:2017  ;
 	    
 	    split_and_merge_ids = [];
 	    for tttt = split_and_merge_times
-	      split_and_merge_ids = [split_and_merge_ids, intersect([GG.ceid],[find(OBJECTS.time == tttt)])];
-	      split_and_merge_ids = [split_and_merge_ids, intersect([HH.ceid],[find(OBJECTS.time == tttt)])];
+	      split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],[find(OBJECTS.time == tttt)])];
+	      split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],[find(OBJECTS.time == tttt)])];
 	    end
 	    split_and_merge_ids = unique(split_and_merge_ids);
 	    
@@ -520,14 +602,6 @@ for year1 = [2017] %1998:2017  ;
 	    end
 
 	 % Make sure splitting_obj_ids has entries from *both* tracks.
-	    %{
-	    if numel(intersect([GG.ceid], [split_and_merge_ids])) < 1
-	      continue
-	    end
-	    if numel(intersect([HH.ceid], [split_and_merge_ids])) < 1
-	      continue
-	    end
-	    %}
 	    
 	    %% OK, a split-n-merge case is detected!
 	    %% We won't know how many LPT system branches are affected,
@@ -536,17 +610,17 @@ for year1 = [2017] %1998:2017  ;
 	    
 		
 	    more_to_do = 1; % Assume there will be more cases, and trigger the loop again.
-	    G.TIMECLUSTERS(ii).ceid = unique([G.TIMECLUSTERS(ii).ceid, split_and_merge_ids]);
-	    G.TIMECLUSTERS(jj).ceid = unique([G.TIMECLUSTERS(jj).ceid, split_and_merge_ids]);
+	    G.TIMECLUSTERS(ii).objid = unique([G.TIMECLUSTERS(ii).objid, split_and_merge_ids]);
+	    G.TIMECLUSTERS(jj).objid = unique([G.TIMECLUSTERS(jj).objid, split_and_merge_ids]);
 	    
-	    %{
-		disp('-----------')
-		datevec(max(intersection_times))
-		'with'
-		datevec(max(splitting_times))
+	    
+		%disp('-----------')
+		%datevec(max(intersection_times))
+		%'with'
+		%datevec(max(splitting_times))
 
-		max(split_and_merge_times) - min(split_and_merge_times)
-	    %}
+		%max(split_and_merge_times) - min(split_and_merge_times)
+	    
 	    
 	    
 	    if more_to_do == 1
@@ -568,9 +642,10 @@ for year1 = [2017] %1998:2017  ;
       end
 
 
+      %}
 
       
-      G.TIMECLUSTERS = calc_tracking_parameters(G.TIMECLUSTERS, OBJECTS);
+      G.TIMECLUSTERS = calc_tracking_parameters(G.TIMECLUSTERS, OBJECTS_DATA_DIR);
 
       if do_plotting
 	subplot(1,2,2);	  
@@ -587,7 +662,8 @@ for year1 = [2017] %1998:2017  ;
     
     %% Take out duplicates.
     Gnew.TIMECLUSTERS = eliminate_overlapping_tracks(G.TIMECLUSTERS, 1) ;
-    Gnew.TIMECLUSTERS = eliminate_duplicate_tracks(Gnew.TIMECLUSTERS, 1) ;
+    %Gnew.TIMECLUSTERS = eliminate_duplicate_tracks(Gnew.TIMECLUSTERS, 1) ;
+    Gnew.TIMECLUSTERS = put_tracks_in_order(Gnew.TIMECLUSTERS, 1);
 
     %% Recalculate the tracking parameters.
     disp('Updating tracking parameters....')

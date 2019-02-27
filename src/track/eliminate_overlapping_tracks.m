@@ -25,18 +25,18 @@ function NEWTIMECLUSTERS = eliminate_overlapping_tracks(TIMECLUSTERS, verbose)
 	continue
       end
       
-      if (numel(NEWTIMECLUSTERS(ii).ceid) > 0 & ...
-          numel(NEWTIMECLUSTERS(jj).ceid) > 0 )
+      if (numel(NEWTIMECLUSTERS(ii).objid) > 0 & ...
+          numel(NEWTIMECLUSTERS(jj).objid) > 0 )
 
-	if numel(intersect(NEWTIMECLUSTERS(ii).ceid, NEWTIMECLUSTERS(jj).ceid)) < 1
+	if numel(intersect(NEWTIMECLUSTERS(ii).objid, NEWTIMECLUSTERS(jj).objid)) < 1
 	  continue
 	end
 	
-        if all(ismember(NEWTIMECLUSTERS(ii).ceid, NEWTIMECLUSTERS(jj).ceid)) | all(ismember(NEWTIMECLUSTERS(jj).ceid, NEWTIMECLUSTERS(ii).ceid))
+        if all(ismember(NEWTIMECLUSTERS(ii).objid, NEWTIMECLUSTERS(jj).objid)) | all(ismember(NEWTIMECLUSTERS(jj).objid, NEWTIMECLUSTERS(ii).objid))
 
-	  NEWTIMECLUSTERS(ii).ceid = unique([NEWTIMECLUSTERS(ii).ceid, NEWTIMECLUSTERS(jj).ceid]);
+	  NEWTIMECLUSTERS(ii).objid = unique([NEWTIMECLUSTERS(ii).objid, NEWTIMECLUSTERS(jj).objid]);
           TC_eliminate_list = [TC_eliminate_list, jj];
-          NEWTIMECLUSTERS(jj).ceid = [-999];
+          NEWTIMECLUSTERS(jj).objid = [-999];
 
         end
       end

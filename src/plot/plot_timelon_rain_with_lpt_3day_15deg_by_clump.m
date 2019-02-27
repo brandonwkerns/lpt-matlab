@@ -1,9 +1,13 @@
 clear all
 close all
 
-addpath('../config')
+addpath('../../config')
 options
 
+
+PROCESSED_DATA_DIR = '../track';
+PLOT_DIR = './'
+%{
 PROCESSED_DATA_DIR = ['../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
@@ -13,7 +17,7 @@ PLOT_DIR = ['../plots/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/systems'];
-
+%}
 
 
 
@@ -22,17 +26,18 @@ set(gcf,'position',[100,100,1000,800])
 set(gcf,'color','w')
 
 corner_label={'5 deg. Filter','Threshold=12 mm/day'};
-CLUMPS=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/clumps_of_worms.rejoin.txt'],'',1,0);
+CLUMPS=dlmread(['../track/clumps_of_worms.rejoin.txt'],'',1,0);
+%CLUMPS=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/clumps_of_worms.rejoin.txt'],'',1,0);
 colors=hsv(12);
 
 
-MJO=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.rejoin.txt'],'',1,0);
+%MJO=dlmread(['../data/',CASE_LABEL,'/processed/g20_72h/thresh12/identify_eastward_propagation/mjo_lpt_list.rejoin.txt'],'',1,0);
 
 lon_range = [0, 360];
 lon_ticks = 0:20:360;
 
 
-for year1=[2018]
+for year1=[2011]
 %for year1=[1998:2017]
 
   clf
@@ -54,7 +59,7 @@ for year1=[2018]
   end
   disp(y1_y2) ;
 
-  F=load(['../data/trmm/interim/timelon/rain_hov_',y1_y2,'_15deg_3day_full_year.mat']) ;
+  F=load(['../../data/trmm/interim/timelon/rain_hov_',y1_y2,'_15deg_3day_full_year.mat']) ;
   G=load([PROCESSED_DATA_DIR,'/TIMECLUSTERS_lpt_',y11_y22,'.rejoin.mat']) ;
 
   for iiii = 2:20
@@ -136,6 +141,7 @@ for year1=[2018]
     idx1 = -999;
     idx2 = -999;
 
+    %{
     if ( sum(MJO(:,1) == year1 & ...
              MJO(:,2) == ii) > 0 )
 
@@ -145,7 +151,8 @@ for year1=[2018]
 	        MJO(:,2) == ii),10);
 
     end
-
+    %}
+    
     if idx1(1) > -1
       for idxx = 1:numel(idx1)
         plot(GG.lon(idx1(idxx):idx2(idxx)), GG.time(idx1(idxx):idx2(idxx)), 'k-', 'linewidth', 2.0);

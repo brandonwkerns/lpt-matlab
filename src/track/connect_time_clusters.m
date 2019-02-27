@@ -1,4 +1,34 @@
-function TIMECLUSTERS=connect_time_clusters(master_ce_file, OPT, verbose)
+%function TIMECLUSTERS=connect_time_clusters(master_ce_file, OPT, verbose)
+clear all
+close all
+
+
+addpath('../../config')
+options
+save('temp.mat');
+OPT = load('temp.mat');
+eval('!rm temp.mat')
+
+%verbose=0;
+verbose=1;
+
+
+% This script reads in the interim files from ../data/interim/gridded_rain_rates
+% and creates accumulated rain files in ../data/interim/accumulate_rain
+PROCESSED_DATA_DIR_IN = ['../../data/',CASE_LABEL,'/processed/',...
+                        'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
+                        sprintf('%d',ACCUMULATION_PERIOD), ...
+                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/objects'];
+
+PROCESSED_DATA_DIR_OUT = ['../../data/',CASE_LABEL,'/processed/',...
+                        'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
+                        sprintf('%d',ACCUMULATION_PERIOD), ...
+                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
+
+%-----------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
+
 
 %%
 %% TIMECLUSTERS=connect_time_clusters_g10_3day_t14_connect_branches(year, verbose)
@@ -32,15 +62,6 @@ maxDistToConnect = 9999.0 ; %20.0; %Max. distance between centroids to match the
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-if ( nargin < 3 )
-  verbose=0 ;
-end
-
-disp(master_ce_file)
-CE=load(master_ce_file) ;
-
-
 %%
 %% Intitialize time cluster stuff.
 %%
@@ -59,25 +80,31 @@ DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 %%
 for dn=[DN]
 
-
   [dnY,dnM,dnD,dnH] = datevec(dn);
+  YYYY = num2str(dnY);
+  MM = sprintf('%02d',dnM);
+  DD = sprintf('%02d',dnD);
+  HH = sprintf('%02d',dnH);
+  
   if verbose
-    disp(['--- ',num2str(dnY),sprintf('%02d',dnM),...
-          sprintf('%02d',dnD),sprintf('%02d',dnH),' ---'])
+    disp(['--- ',YYYY, MM, DD, HH,' ---'])
   end
 
-  ceINDXthisTime=find(CE.time == dn) ;
-  if ( numel(ceINDXthisTime) < 1 )
+  %% Load Objects for this time.
+  OBJ = load([PROCESSED_DATA_DIR_IN, '/', YYYY, '/', MM, '/objects_', YYYY,MM,DD,HH,'.mat']);
+  
+  objINDXthisTime=find(OBJ.time == dn) ;
+  if ( numel(objINDXthisTime) < 1 )
     continue
   end
 
   if (numel(allDates) > 0.1)
 
-    prevDates=allDates(allDates > dn - 0.01 - OPT.DT/24.0 & ...
-                        allDates < dn-0.01 ) ;
+    prevDates = allDates(allDates > dn - 0.01 - OPT.DT/24.0 & ...
+                         allDates < dn-0.01 ) ;
 
   else
-    prevDates=[datenum(1900,1,1,0,0,0)] ;
+    prevDates = -999.0;
   end
 
   already_matched_tc_list = [-999];
@@ -86,59 +113,87 @@ for dn=[DN]
   % Get a set of matching time clusters for each
   %  cluster feature present at this time.
 
-  for thisCE=ceINDXthisTime  % Loop over the cluster features
+  for this_objid = OBJ.id(objINDXthisTime)  % Loop over the cluster features
                                % present at this time.
-
-    istr=num2str(thisCE) ;
+    istr=num2str(this_objid); %thisObj.id) ;
 
     for prevDate = prevDates
-      matchingClusterID=matchingTimeCluster(thisCE,prevDate);
-
+      matchingClusterID = matchingTimeCluster(OBJ, this_objid, TIMECLUSTERS, prevDate, maxDistToConnect, PROCESSED_DATA_DIR_IN, OPT);
 
       if ( numel( matchingClusterID ) <  1   )
 
-        % This is a new cluster.
+        %% This is a new cluster.
+	
         if ( verbose > 0 )
           disp([istr,': No matching time cluster in the database.'])
         end
 
-        % Starting new cloud cluster.
-        startNewTimeCluster(nextClusterID) ;
+        %% So I am starting new cloud cluster.
+        TIMECLUSTERS = startNewTimeCluster(TIMECLUSTERS, nextClusterID);
         if ( verbose > 0 )
           disp(['        + Created new time cluster: ID = ',num2str(nextClusterID)])
         end
 
-        addCluster(nextClusterID,thisCE) ;
+        TIMECLUSTERS = addCluster(TIMECLUSTERS, nextClusterID, this_objid) ;
         nextClusterID = nextClusterID + 1 ;
 
       else
 
+	%% This is either a splitting LPT, or the continuation of a single LPT.
+	
         if ( verbose > 0 )
           disp([istr,': Matches with current existing cluster id = ',num2str(matchingClusterID)])
         end
 
-        %
-        % This will create duplicate tracks when there are more than one
-        %  matchingClusterID's. To fix this, use below either
-        %  mergeDuplicateTCs() or splitDuplicateTCs().
-        %
         for iii=1:numel(matchingClusterID)
-          %% If two or more objects match to an LPT, I have a split.
-          %% At this stage, split tracks will retain the full history of the previous track.
-          if (sum(matchingClusterID(iii) == already_matched_tc_list) > 0)
-            startNewTimeCluster(nextClusterID) ;
-            for checkThisCeid = [TIMECLUSTERS(matchingClusterID(iii)).ceid]
-              if (CE.time(checkThisCeid) < dn-0.001)
-                addCluster(nextClusterID, checkThisCeid) ;
+
+	  if (sum(matchingClusterID(iii) == already_matched_tc_list) > 0)
+
+	    %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	    %% ------- !!! SPLIT TRACKS !!! -----
+            %% If two or more objects match to an LPT, I have a split.
+            %% At this stage, split tracks will retain the full history
+	    %% of the previous track before the split.
+	    %%
+            %% This will create duplicate tracks when there are more than one
+            %%  matchingClusterID's. To fix this, use below either
+            %%  mergeDuplicateTCs() or splitDuplicateTCs().
+            %%
+	    %% Depending on the tracking options, this will be refined below,
+	    %% or it can be refined externally (e.g., using "rejoin" scripts).
+	    %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	    
+	    %% 1) Start the new time cluster
+            TIMECLUSTERS = startNewTimeCluster(TIMECLUSTERS, nextClusterID) ;
+
+	    %% 2) Copy the objids leading up to this point.
+            for checkThisObjid = [TIMECLUSTERS(matchingClusterID(iii)).objid]
+	      OBJprev = load_obj_data(PROCESSED_DATA_DIR_IN, checkThisObjid);
+	      if (OBJprev.time < dn-0.001) % Only add record *before* the current time (dn).
+		TIMECLUSTERS = addCluster(TIMECLUSTERS, nextClusterID, checkThisObjid);
+		%disp(num2str(TIMECLUSTERS(nextClusterID).objid))
               end
             end
-            addCluster(nextClusterID, thisCE) ;
+
+	    TIMECLUSTERS(nextClusterID).objid = unique(TIMECLUSTERS(nextClusterID).objid);
+	    
+	    %% 3) Add the current objid to the new LPT.
+            TIMECLUSTERS = addCluster(TIMECLUSTERS, nextClusterID, this_objid) ;
             disp(['        + Split! Copied to new overlapping time cluster: ID = ',num2str(nextClusterID)])
+	    %% 4) Set the counter to the next available LPT ID.
             nextClusterID = nextClusterID + 1 ;
+	    
           else
-            addCluster(matchingClusterID(iii),thisCE) ;
+
+	    %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	    
+	    %% In this case there was NO SPLIT TRACK.
+	    %% Just attach to end of the previous track.
+            %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            TIMECLUSTERS = addCluster(TIMECLUSTERS, matchingClusterID(iii),this_objid) ;
             already_matched_tc_list = [already_matched_tc_list, matchingClusterID(iii)];
           end
+	  
         end
       end
     end
@@ -154,7 +209,7 @@ end % END Loop over Dates
 %%
 %% Some TCs were close enough to be considered a single track. Allow "center jumps".
 %%
-combineCloseProximityTCs_by_area(OPT.ACCUMULATION_PERIOD/24.0) 
+TIMECLUSTERS = combineCloseProximityTCs_by_area(TIMECLUSTERS, PROCESSED_DATA_DIR_IN, OPT.ACCUMULATION_PERIOD/24.0, OPT, maxDistToConnect, verbose);
 
 %%
 %% Now combining the merging tracks which were duplicates.
@@ -173,9 +228,9 @@ end
 %% Take out time clusters with insufficient duration.
 %%
 
-removeShortLivedTCs(minDuration) ;
+TIMECLUSTERS = removeShortLivedTCs(TIMECLUSTERS, PROCESSED_DATA_DIR_IN, minDuration, verbose) ;
 TIMECLUSTERS = eliminate_overlapping_tracks(TIMECLUSTERS, verbose);
-TIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
+TIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS, verbose);
 
 
 %%
@@ -183,7 +238,7 @@ TIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
 %%
 
 disp('Calculating tracking parameters.')
-TIMECLUSTERS = calc_tracking_parameters(TIMECLUSTERS, CE);
+TIMECLUSTERS = calc_tracking_parameters(TIMECLUSTERS, PROCESSED_DATA_DIR_IN);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%  Output  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -217,12 +272,12 @@ lpt_systems_output_ascii(TIMECLUSTERS, fileout);
 %% NetCDF Output
 netcdf_output_fn=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.lptALL.nc'] ;
 disp(netcdf_output_fn);
-lpt_systems_output_netcdf(TIMECLUSTERS, CE, netcdf_output_fn, OPT);
+lpt_systems_output_netcdf(TIMECLUSTERS, netcdf_output_fn, OPT);
 
 %% Mat file output
 fileout_mat=['TIMECLUSTERS_lpt_',ymd0_ymd9,'.mat'] ;
 disp(fileout_mat);
-lpt_systems_output_mat(TIMECLUSTERS, CE, fileout_mat)
+lpt_systems_output_mat(TIMECLUSTERS, fileout_mat)
 
 disp('Done.')
 
@@ -233,12 +288,13 @@ disp('Done.')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function startNewTimeCluster(tcid)
-  TIMECLUSTERS(tcid).ceid = [] ;
+
+function TIMECLUSTERS=startNewTimeCluster(TIMECLUSTERS, tcid)
+  TIMECLUSTERS(tcid).objid = [] ;
 end
 
 
-function addCluster(tcid,ceid)
+function TIMECLUSTERS = addCluster(TIMECLUSTERS, tcid,objid)
 %
 % tcid = index of TIMECLUSTERS struct array to use.
 % pixels = "pixels" struct for this time
@@ -246,52 +302,80 @@ function addCluster(tcid,ceid)
 %
 % Modifies global function variable TIMECLUSTERS
 %
-  TIMECLUSTERS(tcid).ceid=[TIMECLUSTERS(tcid).ceid,ceid];
+  TIMECLUSTERS(tcid).objid=[TIMECLUSTERS(tcid).objid,objid];
 end
 
 
+function  matchingClusterID=matchingTimeCluster(OBJ, objid, TIMECLUSTERS, timeToSearch, maxDistToConnect, objects_data_dir, OPT)
 
-
-function  matchingClusterID=matchingTimeCluster(theCE,timeToSearch);
-
+  %%
+  %% -- Function to match an LP Object with a collection of TIMECLUSTERS. --
+  %% Usage: matchingClusterID=matchingTimeCluster(OBJ, objid, TIMECLUSTERS, timeToSearch)
+  %%
+  %% Inputs:
+  %%   OBJ is the struct of objects containing the time "timeToSearch"
+  %%   objid is the Object ID we are interestd in.
+  %%   TIMECLUSTERS is the struct of timeclusters to look for matches.
+  %%   timeToSearch is the time to look for matches in the timeclusters struct.
+  %%   maxDistToConnect is the maximum distance between centroids (degrees) to connect them.
+  %%   objects_data_dir is the parent directory of the objects files.
+  %% Output:
+  %%   matchingClusterID is an array with the index of the matching timecluster(s)
+  %% Notes:
+  %%   In merger cases or with overlapping TIMECLUSTERS, matchingClusterID will have multiple entries.
+  %%
+  
   matchingClusterID=[] ;
 
+  %% If still at the initial time of timeclusters, nothing to search.
+  if ( timeToSearch < -900 )
+    return
+  end
+  
+  %% If there are no TIMECLUSTERS yet, return empty array. This will force starting new TIMECLUSTERS.
   if ( numel(TIMECLUSTERS) < 1 )
     return
   else
 
+    %% Load Objects for the timeToSearch.
+    [dnY2,dnM2,dnD2,dnH2] = datevec(timeToSearch);
+    YYYY2 = num2str(dnY2);
+    MM2 = sprintf('%02d',dnM2);
+    DD2 = sprintf('%02d',dnD2);
+    HH2 = sprintf('%02d',dnH2);
+    OBJ2 = load([objects_data_dir, '/', YYYY2, '/', MM2, '/objects_', YYYY2,MM2,DD2,HH2,'.mat']);
+
+    %%
     %% Loop through previous time clusters, looking for a match.
+    %%
     for ii=1:numel(TIMECLUSTERS)
 
       times=[] ;
 
-      for  jj=[TIMECLUSTERS(ii).ceid]
+      for  jj=[TIMECLUSTERS(ii).objid]
 
 	%% If it's not at the right time, then no need to consider it further.
-        if (CE.time(jj) == timeToSearch)
+        if ( sum(OBJ2.id == jj) > 0)
 
           %% Check distance here.
 	  %% I can skip it if it is beyond maxDistToConnect.
-          dLON1=CE.lon(jj)-CE.lon(theCE) ;
-          dLAT1=CE.lat(jj)-CE.lat(theCE) ;
-	  
+          dLON1 = OBJ2.lon(OBJ2.id == jj) - OBJ.lon(OBJ.id == objid) ;
+          dLAT1 = OBJ2.lat(OBJ2.id == jj) - OBJ.lat(OBJ.id == objid) ;
           if ( sqrt(dLON1.^2 + dLAT1.^2 ) > maxDistToConnect )
             continue
           end
 
-	  %% OK, it is within maxDistToConnect, so determine how much overlap.
-	  
-          X1=CE.pixels(jj).x ;
-          Y1=CE.pixels(jj).y ;
+	  %% OK, the centroid is within maxDistToConnect, so determine how much overlap.
+          X1=OBJ2.pixels(OBJ2.id == jj).x ;
+          Y1=OBJ2.pixels(OBJ2.id == jj).y ;
 
-          X2=CE.pixels(theCE).x ;
-          Y2=CE.pixels(theCE).y ;
+          X2=OBJ.pixels(OBJ.id == objid).x ;
+          Y2=OBJ.pixels(OBJ.id == objid).y ;
 
           hits=[] ;
 
           A=[X1,Y1] ;
           B=[X2,Y2] ;
-
 
           HITS=intersect(A,B,'rows') ;
           nHits=size(HITS,1);
@@ -337,23 +421,23 @@ function mergeDuplicateTCs()
     for iiii=[allTCindices]
 
       otherTCindices=setdiff(allTCindices,iiii) ;
-      thisClusterCEList=TIMECLUSTERS(iiii).ceid ;
+      thisClusterCEList=TIMECLUSTERS(iiii).objid ;
 
       found_a_match = false;
       for jjjj=[otherTCindices]
 
-        if ( numel(intersect(TIMECLUSTERS(iiii).ceid,...
-                             TIMECLUSTERS(jjjj).ceid))>0)
+        if ( numel(intersect(TIMECLUSTERS(iiii).objid,...
+                             TIMECLUSTERS(jjjj).objid))>0)
 
           found_a_match = true;
           if verbose
             disp([num2str(jjjj), ' absorbed into ', num2str(iiii)])
           end
 
-          TIMECLUSTERS(iiii).ceid=sort(union(TIMECLUSTERS(iiii).ceid,...
-                                        TIMECLUSTERS(jjjj).ceid));
+          TIMECLUSTERS(iiii).objid=sort(union(TIMECLUSTERS(iiii).objid,...
+                                        TIMECLUSTERS(jjjj).objid));
 
-          TIMECLUSTERS(jjjj).ceid=[] ;
+          TIMECLUSTERS(jjjj).objid=[] ;
           throwAwayTCs=[throwAwayTCs,jjjj] ;
 
           still_work_to_be_done = true;
@@ -410,7 +494,7 @@ function splitDuplicateTCs_split_by_instantaneous_area()
     for iiii = [allTCindices]
 
       still_work_to_be_done = false;
-      if (numel(TIMECLUSTERS(iiii).ceid) < 1)
+      if (numel(TIMECLUSTERS(iiii).objid) < 1)
         starting_ce_index = iiii + 1;
         continue
       end
@@ -420,16 +504,16 @@ function splitDuplicateTCs_split_by_instantaneous_area()
       intersectingTCbeginning_times = [];
       intersecting_times = [];
 
-      for kk = TIMECLUSTERS(iiii).ceid
-        intersecting_times = [intersecting_times, CE.time(TIMECLUSTERS(iiii).ceid)];
+      for kk = TIMECLUSTERS(iiii).objid
+        intersecting_times = [intersecting_times, CE.time(TIMECLUSTERS(iiii).objid)];
       end
       for jjjj = [otherTCindices]
-        intersections=intersect(TIMECLUSTERS(iiii).ceid,...
-                                TIMECLUSTERS(jjjj).ceid);
+        intersections=intersect(TIMECLUSTERS(iiii).objid,...
+                                TIMECLUSTERS(jjjj).objid);
         if (numel(intersections) > 0)
           intersectingTCindices = [intersectingTCindices, jjjj];
-          intersectingTCbeginning_times = [intersectingTCbeginning_times, CE.time(TIMECLUSTERS(jjjj).ceid(1))];
-          intersecting_times = [intersecting_times, CE.time(TIMECLUSTERS(jjjj).ceid)];
+          intersectingTCbeginning_times = [intersectingTCbeginning_times, CE.time(TIMECLUSTERS(jjjj).objid(1))];
+          intersecting_times = [intersecting_times, CE.time(TIMECLUSTERS(jjjj).objid)];
         end
       end
 
@@ -442,52 +526,52 @@ function splitDuplicateTCs_split_by_instantaneous_area()
         end
 
         for jjjj = intersectingTCindices
-          intersections=intersect(TIMECLUSTERS(iiii).ceid,...
-                                  TIMECLUSTERS(jjjj).ceid);
+          intersections=intersect(TIMECLUSTERS(iiii).objid,...
+                                  TIMECLUSTERS(jjjj).objid);
 
       	  if (numel(intersections) < 1)
       	    continue
       	  end
 
           % Check if I have an overlapping/duplicate track here.
-          if (numel(setxor(intersections, TIMECLUSTERS(iiii).ceid)) < 1)
+          if (numel(setxor(intersections, TIMECLUSTERS(iiii).objid)) < 1)
             if verbose
               disp(['Duplicate! Will throw away ID=',num2str(iiii)])
             end
             throwAwayTCs = [throwAwayTCs, iiii];
-            TIMECLUSTERS(iiii).ceid = [];
+            TIMECLUSTERS(iiii).objid = [];
             continue
           end
-          if (numel(setxor(intersections, TIMECLUSTERS(jjjj).ceid)) < 1)
+          if (numel(setxor(intersections, TIMECLUSTERS(jjjj).objid)) < 1)
             if verbose
               disp(['Duplicate! Will throw away ID=',num2str(jjjj)])
             end
             throwAwayTCs = [throwAwayTCs, jjjj];
-            TIMECLUSTERS(jjjj).ceid = [];
+            TIMECLUSTERS(jjjj).objid = [];
             continue
           end
 
           %% "split" track portion, if it exists.
           %% (If no split, nothing happens here.)
-          split_point_ceid = -999;
-          for ll = [TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid >= min(intersections))]
+          split_point_objid = -999;
+          for ll = [TIMECLUSTERS(iiii).objid(TIMECLUSTERS(iiii).objid >= min(intersections))]
             if sum(intersections == ll) > 0
-              split_point_ceid = ll;
+              split_point_objid = ll;
             else
               break;
             end
           end
-      	  if split_point_ceid < 1
-            for ll = [TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid >= min(intersections))]
+      	  if split_point_objid < 1
+            for ll = [TIMECLUSTERS(jjjj).objid(TIMECLUSTERS(jjjj).objid >= min(intersections))]
               if sum(intersections == ll) > 0
-                split_point_ceid = ll;
+                split_point_objid = ll;
               else
                 break;
               end
             end
       	  end
-          indices1 = TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid > split_point_ceid);
-          indices2 = TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid > split_point_ceid);
+          indices1 = TIMECLUSTERS(iiii).objid(TIMECLUSTERS(iiii).objid > split_point_objid);
+          indices2 = TIMECLUSTERS(jjjj).objid(TIMECLUSTERS(jjjj).objid > split_point_objid);
 
 
           if (numel(indices1) < 1 | numel(indices2) < 1)
@@ -501,10 +585,10 @@ function splitDuplicateTCs_split_by_instantaneous_area()
                 disp(['        A track split off (ID=',num2str(jjjj),').'])
                 disp(['        + Split portion is a new time cluster: ID = ',num2str(nextClusterID)])
               end
-              TIMECLUSTERS(nextClusterID).ceid=...
-                  TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid > split_point_ceid);
+              TIMECLUSTERS(nextClusterID).objid=...
+                  TIMECLUSTERS(jjjj).objid(TIMECLUSTERS(jjjj).objid > split_point_objid);
               nextClusterID = nextClusterID + 1 ;
-              TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid > split_point_ceid)=[];
+              TIMECLUSTERS(jjjj).objid(TIMECLUSTERS(jjjj).objid > split_point_objid)=[];
               %break
             else
               startNewTimeCluster(nextClusterID) ;
@@ -512,10 +596,10 @@ function splitDuplicateTCs_split_by_instantaneous_area()
                 disp(['        A track split off (ID=',num2str(iiii),').'])
                 disp(['        + Split portion is a new time cluster: ID = ',num2str(nextClusterID)])
               end
-              TIMECLUSTERS(nextClusterID).ceid=...
-                  TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid > split_point_ceid);
+              TIMECLUSTERS(nextClusterID).objid=...
+                  TIMECLUSTERS(iiii).objid(TIMECLUSTERS(iiii).objid > split_point_objid);
               nextClusterID = nextClusterID + 1 ;
-              TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid > split_point_ceid)=[];
+              TIMECLUSTERS(iiii).objid(TIMECLUSTERS(iiii).objid > split_point_objid)=[];
               %break
             end
           end
@@ -523,8 +607,8 @@ function splitDuplicateTCs_split_by_instantaneous_area()
           %% "merge" track portion, if it exists.
           %% (If no merge, nothing happens here.)
 
-          indices11 = TIMECLUSTERS(iiii).ceid(TIMECLUSTERS(iiii).ceid < min(intersections));
-          indices22 = TIMECLUSTERS(jjjj).ceid(TIMECLUSTERS(jjjj).ceid < min(intersections));
+          indices11 = TIMECLUSTERS(iiii).objid(TIMECLUSTERS(iiii).objid < min(intersections));
+          indices22 = TIMECLUSTERS(jjjj).objid(TIMECLUSTERS(jjjj).objid < min(intersections));
 
           if (numel(indices11) < 1 | numel(indices22) < 1)
             if verbose
@@ -544,13 +628,13 @@ function splitDuplicateTCs_split_by_instantaneous_area()
               if verbose
                 disp(['  Merger --> ', num2str(iiii), ' wins,', num2str(jjjj),' cut short.'])
               end
-              TIMECLUSTERS(jjjj).ceid=indices22;
+              TIMECLUSTERS(jjjj).objid=indices22;
               %break
             else
               if verbose
                 disp(['  Merger --> ', num2str(jjjj), ' wins,', num2str(iiii),' cut short.'])
               end
-              TIMECLUSTERS(iiii).ceid=indices11;
+              TIMECLUSTERS(iiii).objid=indices11;
               %break
             end
           end
@@ -605,8 +689,8 @@ function splitDuplicateTCs_maximize_accumulated_area()
 
       intersectingTCindices = [];
       for jjjj = [otherTCindices]
-        intersections=intersect(TIMECLUSTERS(iiii).ceid,...
-                                TIMECLUSTERS(jjjj).ceid);
+        intersections=intersect(TIMECLUSTERS(iiii).objid,...
+                                TIMECLUSTERS(jjjj).objid);
 
         if (numel(intersections) > 0)
           intersectingTCindices = [intersectingTCindices, jjjj];
@@ -621,17 +705,17 @@ function splitDuplicateTCs_maximize_accumulated_area()
 
         %Get accumulated area of thisCluster
         thisClusterAccumArea=0.0 ;
-        for thisClusterCEID=TIMECLUSTERS(iiii).ceid
+        for thisClusterOBJID=TIMECLUSTERS(iiii).objid
           thisClusterAccumArea=thisClusterAccumArea+...
-              CE.area(thisClusterCEID);
+              CE.area(thisClusterOBJID);
         end
 
         %Get accumulated area of otherCluster's
         otherClusterAccumArea = zeros(1, numel(intersectingTCindices));
         for kk = 1:numel(intersectingTCindices)
-          for otherClusterCEID=[TIMECLUSTERS(intersectingTCindices(kk)).ceid]
+          for otherClusterOBJID=[TIMECLUSTERS(intersectingTCindices(kk)).objid]
             otherClusterAccumArea(kk)=otherClusterAccumArea(kk) + ...
-                CE.area(otherClusterCEID);
+                CE.area(otherClusterOBJID);
           end
         end
 
@@ -665,8 +749,8 @@ function splitDuplicateTCs_maximize_accumulated_area()
 
           % NOTE!!! The "winner" index is not necessarily the starting "iiii" indx!
           % Therefore, we need to check for intersections again.
-          intersections=intersect(TIMECLUSTERS(winner_index).ceid,...
-                                  TIMECLUSTERS(this_loser_index).ceid);
+          intersections=intersect(TIMECLUSTERS(winner_index).objid,...
+                                  TIMECLUSTERS(this_loser_index).objid);
           if (numel(intersections) < 1)
             if verbose
               disp(['Skipping ', num2str(this_loser_index), ' since it does not intersect the Winner.'])
@@ -681,23 +765,23 @@ function splitDuplicateTCs_maximize_accumulated_area()
 
           %% "split" track portion, if it exists.
           %% (This does NOT get done if there is no split)
-          if (sum(TIMECLUSTERS(this_loser_index).ceid > max(intersections)) > 0)
+          if (sum(TIMECLUSTERS(this_loser_index).objid > max(intersections)) > 0)
             startNewTimeCluster(nextClusterID) ;
             if ( verbose > 0 )
               disp(['        A track split off (ID=',num2str(this_loser_index),').'])
               disp(['        + Split portion is a new time cluster: ID = ',num2str(nextClusterID)])
             end
-            TIMECLUSTERS(nextClusterID).ceid=...
-                TIMECLUSTERS(this_loser_index).ceid(TIMECLUSTERS(this_loser_index).ceid > max(intersections));
+            TIMECLUSTERS(nextClusterID).objid=...
+                TIMECLUSTERS(this_loser_index).objid(TIMECLUSTERS(this_loser_index).objid > max(intersections));
             nextClusterID = nextClusterID + 1 ;
           end
 
           %% "merge" track portion, if it exists.
           %% (If no merge, the track gets flagged for removal.)
-          TIMECLUSTERS(this_loser_index).ceid=...
-              TIMECLUSTERS(this_loser_index).ceid(TIMECLUSTERS(this_loser_index).ceid < min(intersections));
+          TIMECLUSTERS(this_loser_index).objid=...
+              TIMECLUSTERS(this_loser_index).objid(TIMECLUSTERS(this_loser_index).objid < min(intersections));
 
-          if (numel(TIMECLUSTERS(this_loser_index).ceid) < 1)
+          if (numel(TIMECLUSTERS(this_loser_index).objid) < 1)
             if verbose
               disp(['Completely absorbed! Will throw away ID=',num2str(this_loser_index)])
             end
@@ -728,7 +812,7 @@ end
 
 
 
-function removeShortLivedTCs(minduration) ;
+function TIMECLUSTERS = removeShortLivedTCs(TIMECLUSTERS, obj_data_dir, minduration, verbose) ;
 
   %% Accesses main function variables: TIMECLUSTERS, CE
   %% Modifies TIMECLUSTERS
@@ -739,13 +823,15 @@ function removeShortLivedTCs(minduration) ;
   for iiii=[allTCindices]
     thisTCtimeList=[] ;
 
-    if ( numel(TIMECLUSTERS(iiii).ceid) < 1 )
+    if ( numel(TIMECLUSTERS(iiii).objid) < 1 )
       throwAwayTCs=[throwAwayTCs,iiii] ;
     end
 
-    for jjjj=1:numel(TIMECLUSTERS(iiii).ceid)
-      thisTCtimeList=[thisTCtimeList,...
-                      CE.time(TIMECLUSTERS(iiii).ceid(jjjj))] ;
+    for jjjj=1:numel(TIMECLUSTERS(iiii).objid)
+      OBJ = load_obj_data(obj_data_dir,TIMECLUSTERS(iiii).objid(jjjj));
+
+      thisTCtimeList=[thisTCtimeList, OBJ.time];  %...
+                      %CE.time(TIMECLUSTERS(iiii).objid(jjjj))] ;
     end
 
     duration=24*(max(thisTCtimeList)-min(thisTCtimeList)) ;
@@ -766,46 +852,54 @@ function removeShortLivedTCs(minduration) ;
 end
 
 
-function combineCloseProximityTCs_by_area(maxCombineTimeDiff) ;
+function TIMECLUSTERS = combineCloseProximityTCs_by_area(TIMECLUSTERS, obj_data_dir, maxCombineTimeDiff, OPT, maxDistToConnect, verbose) ;
   
   disp(' --- ') 
   disp(['Allow center jumps if they overlap within: ', num2str(24*maxCombineTimeDiff), ' hours.']) 
   disp(' --- ') 
-  
+
+  nextClusterID = numel(TIMECLUSTERS) + 1;
+     
   TC_eliminate_list=[];
   
   imax = numel(TIMECLUSTERS);
   
   for ii=1:imax
-    
-    disp(['-- Working on ', num2str(ii), ' of ', num2str(imax), '.'])
+
+    if (verbose)
+      disp(['-- Working on ', num2str(ii), ' of ', num2str(imax), '.'])
+    end
     
     otherClusters=setdiff(1:numel(TIMECLUSTERS),ii);
     
     %%Test for GG_before
     for ii_before=[otherClusters]
-      jumpTime=CE.time(TIMECLUSTERS(ii).ceid(1)) - ...
-               CE.time(TIMECLUSTERS(ii_before).ceid(end));
+
+      %% Figure out how much time between the beginning of ii and end of ii_before.
+      OBJ = load_obj_data(obj_data_dir,TIMECLUSTERS(ii).objid(1));
+      OBJ_before = load_obj_data(obj_data_dir,TIMECLUSTERS(ii_before).objid(end));
+      
+      jumpTime=OBJ.time - OBJ_before.time;
 
       %% If it's not within the maxCombineTimeDiff, no need to consider it any further.
       if (jumpTime > 0.0 & jumpTime < maxCombineTimeDiff+0.01)
 
-        dLON1=CE.lon(TIMECLUSTERS(ii).ceid(1)) - ...
-              CE.lon(TIMECLUSTERS(ii_before).ceid(end));
+        dLON1=OBJ.lon - OBJ_before.lon; %CE.lon(TIMECLUSTERS(ii).objid(1)) - ...
+              %CE.lon(TIMECLUSTERS(ii_before).objid(end));
 	
-        dLAT1=CE.lat(TIMECLUSTERS(ii).ceid(1)) - ...
-              CE.lat(TIMECLUSTERS(ii_before).ceid(end));
+        dLAT1=OBJ.lat - OBJ_before.lat; %CE.lat(TIMECLUSTERS(ii).objid(1)) - ...
+              %CE.lat(TIMECLUSTERS(ii_before).objid(end));
 	
         if ( sqrt(dLON1.^2 + dLAT1.^2 ) > maxDistToConnect )
 	  continue
         end
 
 	%% If it is within the time window, I need to calculate the overlap.
-	X1=CE.pixels(TIMECLUSTERS(ii).ceid(1)).x ;
-	Y1=CE.pixels(TIMECLUSTERS(ii).ceid(1)).y ;
+	X1=OBJ.pixels.x; %CE.pixels(TIMECLUSTERS(ii).objid(1)).x ;
+	Y1=OBJ.pixels.y; %CE.pixels(TIMECLUSTERS(ii).objid(1)).y ;
 	
-	X2=CE.pixels(TIMECLUSTERS(ii_before).ceid(end)).x ;
-	Y2=CE.pixels(TIMECLUSTERS(ii_before).ceid(end)).y ;
+	X2=OBJ_before.pixels.x; %CE.pixels(TIMECLUSTERS(ii_before).objid(end)).x ;
+	Y2=OBJ_before.pixels.y; %CE.pixels(TIMECLUSTERS(ii_before).objid(end)).y ;
 	
 	hits=[] ;
 
@@ -826,9 +920,9 @@ function combineCloseProximityTCs_by_area(maxCombineTimeDiff) ;
 		  num2str(sqrt(dLON1.^2 + dLAT1.^2 )),' deg. jump).'])
 	  end
 	  
-	  startNewTimeCluster(nextClusterID) ;
-          TIMECLUSTERS(nextClusterID).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
-							TIMECLUSTERS(ii_before).ceid]));
+	  TIMECLUSTERS = startNewTimeCluster(TIMECLUSTERS, nextClusterID) ;
+          TIMECLUSTERS(nextClusterID).objid=unique(sort([TIMECLUSTERS(ii).objid,...
+							TIMECLUSTERS(ii_before).objid]));
           nextClusterID = nextClusterID + 1 ;
 	  
           TC_eliminate_list=[TC_eliminate_list, ii];
@@ -864,22 +958,22 @@ function combineCloseProximityTCs_by_centroid(maxCombineDist,maxCombineTimeDiff)
     %Test for GG_before
     for ii_before=[otherClusters]
 
-      jumpTime=CE.time(TIMECLUSTERS(ii).ceid(1)) - ...
-               CE.time(TIMECLUSTERS(ii_before).ceid(end));
+      jumpTime=CE.time(TIMECLUSTERS(ii).objid(1)) - ...
+               CE.time(TIMECLUSTERS(ii_before).objid(end));
 
-      jumpLon=CE.lon(TIMECLUSTERS(ii).ceid(1)) - ...
-              CE.lon(TIMECLUSTERS(ii_before).ceid(end));
+      jumpLon=CE.lon(TIMECLUSTERS(ii).objid(1)) - ...
+              CE.lon(TIMECLUSTERS(ii_before).objid(end));
 
-      jumpLat=CE.lat(TIMECLUSTERS(ii).ceid(1)) - ...
-              CE.lat(TIMECLUSTERS(ii_before).ceid(end));
+      jumpLat=CE.lat(TIMECLUSTERS(ii).objid(1)) - ...
+              CE.lat(TIMECLUSTERS(ii_before).objid(end));
 
       jumpDist = sqrt(jumpLon^2 + jumpLat^2);
 
       if ( abs(jumpTime) < maxCombineTimeDiff+0.01 & ...
            abs(jumpDist) < maxCombineDist+0.01 )
 
-        TIMECLUSTERS(ii).ceid=unique(sort([TIMECLUSTERS(ii).ceid,...
-                            TIMECLUSTERS(ii_before).ceid]));
+        TIMECLUSTERS(ii).objid=unique(sort([TIMECLUSTERS(ii).objid,...
+                            TIMECLUSTERS(ii_before).objid]));
 
         disp(['Combined LPTs: ',num2str(ii_before),' in to ',...
               num2str(ii),'.'])
@@ -895,28 +989,21 @@ function combineCloseProximityTCs_by_centroid(maxCombineDist,maxCombineTimeDiff)
 end
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function NEWTIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS, verbose);
 
+  % Put TIMECLUSTERS tracks in order by starting objid.
 
-function NEWTIMECLUSTERS = put_tracks_in_order(TIMECLUSTERS);
-
-  % Put TIMECLUSTERS tracks in order by starting ceid.
-
-  starting_ceid_list = [];
+  starting_objid_list = [];
   for ii = 1:numel(TIMECLUSTERS)
-    starting_ceid_list(ii) = TIMECLUSTERS(ii).ceid(1);
+    starting_objid_list(ii) = TIMECLUSTERS(ii).objid(1);
   end
 
-  [sort_ceid_list, sort_ceid_list_indx] = sort(starting_ceid_list);
+  [sort_objid_list, sort_objid_list_indx] = sort(starting_objid_list);
 
   if (verbose)
-    disp(['Sorting by order of starting ceid: ', num2str(sort_ceid_list_indx)])
+    disp(['Sorting by order of starting objid: ', num2str(sort_objid_list_indx)])
   end
 
-  NEWTIMECLUSTERS = TIMECLUSTERS(sort_ceid_list_indx);
+  NEWTIMECLUSTERS = TIMECLUSTERS(sort_objid_list_indx);
 end %local function
-
-
-end %% End of parent function
-
 

@@ -7,6 +7,10 @@ close all
 addpath('../../config')
 options
 
+PROCESSED_DATA_DIR = './' ;
+EASTWARD_PROP_DATA_DIR = './' ;
+
+%{
 PROCESSED_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
@@ -16,6 +20,7 @@ EASTWARD_PROP_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation'];
+%}
 
 eval(['!mkdir -p ', EASTWARD_PROP_DATA_DIR])
 
@@ -29,7 +34,7 @@ fid_clumps_of_worms=fopen([EASTWARD_PROP_DATA_DIR,'/clumps_of_worms.rejoin.txt']
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
-for year1 = 1998:2018  ;
+for year1 = 1998:2017  ;
 
   year2=year1+1 ;
 
@@ -65,7 +70,7 @@ for year1 = 1998:2018  ;
 
     for jj = setxor(ii,1:numel(G.TIMECLUSTERS))    %1:ii-1
 
-      if numel(intersect(G.TIMECLUSTERS(ii).ceid, G.TIMECLUSTERS(jj).ceid)) > 0
+      if numel(intersect(G.TIMECLUSTERS(ii).objid, G.TIMECLUSTERS(jj).objid)) > 0
 
         if (isfinite(clump_ids(jj)))
           clump_ids(ii) = clump_ids(jj);
@@ -87,19 +92,19 @@ for year1 = 1998:2018  ;
   % Search clump id's that may still overlap.
   for this_clump_id = 1:nanmax(clump_ids)
 
-    ceid1 = [];
+    objid1 = [];
     for ii = [find(clump_ids == this_clump_id)]
-        ceid1 = unique([ceid1, G.TIMECLUSTERS(ii).ceid]);
+        objid1 = unique([objid1, G.TIMECLUSTERS(ii).objid]);
     end
 
     for other_clump_id = setxor(this_clump_id, 1:nanmax(clump_ids))
 
-      ceid2 = [];
+      objid2 = [];
       for ii = [find(clump_ids == other_clump_id)]
-          ceid2 = unique([ceid2, G.TIMECLUSTERS(ii).ceid]);
+          objid2 = unique([objid2, G.TIMECLUSTERS(ii).objid]);
       end
 
-      if (numel(intersect(ceid1, ceid2)) > 0)
+      if (numel(intersect(objid1, objid2)) > 0)
 
         clump_ids(clump_ids == other_clump_id) = this_clump_id;
 

@@ -1,11 +1,11 @@
-function lpt_systems_output_netcdf(systems, objects, ncfile, OPT)
+function lpt_systems_output_netcdf(systems, ncfile, OPT)
 
   eval(['!rm -f ',ncfile])
   %% NetCDF output for "systems" to the specified file "ncfile."
   %% lp_systems_output_netcdf(systems, ncfile)
   
   TIMECLUSTERS = systems;
-  CE = objects;
+  %CE = objects;
   netcdf_output_fn = ncfile; %['TIMECLUSTERS_lpt_',ymd0_ymd9,'.lptALL.nc'] ;
   DN=OPT.DN1:datenum(0,0,0,OPT.DT,0,0):OPT.DN2;
 
@@ -44,8 +44,8 @@ function lpt_systems_output_netcdf(systems, objects, ncfile, OPT)
   
   dimid_lpt_id  = netcdf.defDim(ncid, 'lpt_id', numel(TIMECLUSTERS));
   dimid_alltime  = netcdf.defDim(ncid, 'alltime', numel(DN));
-  dimid_lon_grid  = netcdf.defDim(ncid, 'lon', numel(CE.grid.lon));
-  dimid_lat_grid  = netcdf.defDim(ncid, 'lat', numel(CE.grid.lat));
+  %dimid_lon_grid  = netcdf.defDim(ncid, 'lon', numel(CE.grid.lon));
+  %dimid_lat_grid  = netcdf.defDim(ncid, 'lat', numel(CE.grid.lat));
   dimid_obs  = netcdf.defDim(ncid, 'obs', numel(stitch_lon));
   
 
@@ -55,8 +55,8 @@ function lpt_systems_output_netcdf(systems, objects, ncfile, OPT)
   varid_obs = netcdf.defVar(ncid, 'obs', 'NC_INT', dimid_obs);
   varid_alltime = netcdf.defVar(ncid, 'alltime', 'NC_DOUBLE', dimid_alltime);
   varid_end_time = netcdf.defVar(ncid, 'end_of_accumulation_alltime', 'NC_DOUBLE', dimid_alltime);
-  varid_lon_grid  = netcdf.defVar(ncid, 'lon', 'NC_DOUBLE', dimid_lon_grid);
-  varid_lat_grid  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_lat_grid);
+  %varid_lon_grid  = netcdf.defVar(ncid, 'lon', 'NC_DOUBLE', dimid_lon_grid);
+  %varid_lat_grid  = netcdf.defVar(ncid, 'lat', 'NC_DOUBLE', dimid_lat_grid);
 
 				% Summary stats
   varid_lpt_duration = netcdf.defVar(ncid, 'duration', 'NC_DOUBLE', dimid_lpt_id);
@@ -112,8 +112,8 @@ function lpt_systems_output_netcdf(systems, objects, ncfile, OPT)
   netcdf.putVar(ncid, varid_lpt_id, 1:numel(TIMECLUSTERS));
   netcdf.putVar(ncid, varid_alltime, 24.0 * (DN - datenum(1970,1,1,0,0,0) - 0.5*OPT.ACCUMULATION_PERIOD/24.0));
   netcdf.putVar(ncid, varid_end_time, 24.0 * (DN - datenum(1970,1,1,0,0,0)));
-  netcdf.putVar(ncid, varid_lon_grid, CE.grid.lon);
-  netcdf.putVar(ncid, varid_lat_grid, CE.grid.lat);
+  %netcdf.putVar(ncid, varid_lon_grid, CE.grid.lon);
+  %netcdf.putVar(ncid, varid_lat_grid, CE.grid.lat);
 
 				% LPT overall summary
   netcdf.putVar(ncid, varid_lpt_duration, durations);
@@ -140,8 +140,8 @@ function lpt_systems_output_netcdf(systems, objects, ncfile, OPT)
 
 				% Attributes
   ncwriteatt(netcdf_output_fn,'lpt_id','units','1');
-  ncwriteatt(netcdf_output_fn,'lon','units','degrees_east');
-  ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
+  %ncwriteatt(netcdf_output_fn,'lon','units','degrees_east');
+  %ncwriteatt(netcdf_output_fn,'lat','units','degrees_north');
   ncwriteatt(netcdf_output_fn,'centroid_lon','units','degrees_east');
   ncwriteatt(netcdf_output_fn,'centroid_lat','units','degrees_north');
   ncwriteatt(netcdf_output_fn,'alltime','units','hours since 1970-1-1 0:0:0');

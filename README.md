@@ -15,24 +15,38 @@ Large Scale Precipitation Tracking (LPT) is tracking of large-scale (e. g., thou
 
 
 Input files are either .mat files or NetCDF (.nc).
+You can use any input, but need to write a preprocessor script to get it to the gridded file format.
 
 Output files are .txt, .mat, and .nc.
 
 The directories are organized as follows:
 config/		    	       		Configuration files.
 data/
-data/CASE_LABEL/raw/			Where input .mat files are copied or linked.
+data/CASE_LABEL/raw/			Where input files are copied or linked.
 data/CASE_LABEL/interim/accumulated/	The intermediate rain accumulation data.
 data/CASE_LABEL/interim/filtered/	The intermediate filtered rain accumulation data.
 data/CASE_LABEL/processed/objects/	The processed LPT objects, e.g., "shapshots".
 data/CASE_LABEL/processed/tracks/	The processed LPT tracks.
 plots/CASE_LABEL/			Where plots get stored.
-src/					Matlab source code.
+src/					Matlab source code. Organized as follows:
+src/preprocess/
+src/track/
+src/classify/
+src/mask/
 
 #############################################################################################
 
 Here are the steps to run LPT. Recommend doing it for TRMM 3B42 (TMPA) data first.
 Run the scripts while inside of the "src" directory.
+
+
+!!!
+To run Matlab in the background, especially with multiple instances in parallal, this seems to work best:
+
+matlab -nodisplay -singleCompThread -r "try, connect_time_clusters; end, quit" > log.2006 < /dev/null &
+
+(This example is for the script  connect_time_clusters.m and log file log.2006.)
+!!!
 
 Hint for viewing multiple files at once in ncview:
 You may need to set "ulimit -n 4096" or similar to see all the files at once.
@@ -61,7 +75,7 @@ THRESH        for example thresh12 for 12 mm/day threshold.
    --> The template "config/options.trmm_template.m" file has the updated MJO LPT identification.
 
 
-3) get the accumulated rain data files.
+3) get the 3 day rainfall data files (src/preprocess).
 
    3a) It is recommended to link the original files into a subdirectory of "data/raw" directory
        so you remember where they came from. E.g., "data/raw/tmpa" for TMPA.
@@ -73,28 +87,27 @@ THRESH        for example thresh12 for 12 mm/day threshold.
        preprocess_tmpa.m           --> .mat files
        calc_rain_accumulation.m    --> .nc files
 
-       (Run the scripts from within the src/ directory.)
 
 
-4) Run the spatial filtering script.
+4) Run the spatial filtering script (src/preprocess).
 
    Script: calc_rain_filter.m (master) --> .nc files
    Dependencies: gaussSmooth.m, gaussSmoothKernel.m (function dependency--don't run these on command line!)
 
 
-5) Run the feature identification script.
+5) Run the feature identification script (src/track).
 
    Script: identify_objects.m
    --> Outputs will be text, mat, and nc files named "data/CASE_LABEL/processed/FILTER_ACCUM/THRESH/objects_*"
 
 
-6) Run the time tracking script.
+6) Run the time tracking script (src/track).
 
-   Script: run_tracking.m
-   Dependency: connect_time_clusters.m
+   Script: connect_time_clusters.m
+   Dependency: several Matlab functions
    --> Outputs will be text, mat, and nc files in "data/CASE_LABEL/processed/FILTER_ACCUM/THRESH/"
 
-7) Group in to families, and identify MJO candidates if you want to use this version of track data.
+7) Group in to families, and identify MJO candidates if you want to use this version of track data. (src/track)
 
    Scripts:
    -- identify_clumps_of_worms.m (needed to proceed with steps below)
@@ -104,21 +117,24 @@ THRESH        for example thresh12 for 12 mm/day threshold.
 ### These steps identify "families" of LPT systems and rejoin many of the tracks with
 ### short splits and mergers.
 
-8) Run the first "rejoin" script, which handles LPT systems that split then re-merge back together.
+8) Run the first "rejoin" script, which handles LPT systems that split then re-merge back together. (src/track)
 
    Scripts:
    -- recombine_split_n_merge_lpts.m (Generates TIMECLUSTERS*.rejoin.* files)
    -- identify_clumps_of_worms_rejoin.m (needed -- groupint in to LPT system families)
    -- identify_mjo_candidates_rejoin.m (optional -- only if you want MJO candidates from this step).
 
-9) Run the second "rejoin" script, which handles short duration (e.g., < 3 day) mergers and splits.
+9) Run the second "rejoin" script, which handles short duration (e.g., < 3 day) mergers and splits. (src/track)
 
    Scripts:
    -- recombine_split_n_merge_lpts2.m (Generates TIMECLUSTERS*.rejoin.* files)
    -- identify_clumps_of_worms_rejoin2.m (needed -- grouping on to LPT system families)
    -- identify_mjo_candidates_rejoin2.m (get MJO candidates from this step).
 
-10) Plotting.
+
+10) Calculate the masks. (src/mask)
+
+11) Plotting. (src/plot)
 
     A set of sample plotting scripts are provided with the package. These are set up for TRMM TMPA,
     and would need to be adapted to use with other data sets.

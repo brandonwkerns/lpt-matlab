@@ -12,25 +12,30 @@ eval('!rm temp.mat')
 do_plotting=0;
 
 %% Clumps of Worms
-clumps_file = ['../../data/',CASE_LABEL,'/processed/',...
-               'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
-               sprintf('%d',ACCUMULATION_PERIOD), ...
-               'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation/',...
-               'clumps_of_worms.txt'];
+%clumps_file = ['../../data/',CASE_LABEL,'/processed/',...
+%               'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
+%               sprintf('%d',ACCUMULATION_PERIOD), ...
+%               'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/identify_eastward_propagation/',...
+%               'clumps_of_worms.txt'];
+clumps_file = './clumps_of_worms.txt';
 
 clumps = dlmread(clumps_file,'',1,0);
 
 
 %% Directories
+PROCESSED_DATA_DIR = './';
+
+%{
 PROCESSED_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                       'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                        sprintf('%d',ACCUMULATION_PERIOD), ...
                        'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/timeclusters'];
-
+%}
 OBJECTS_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
                     'g',sprintf('%d',FILTER_STANDARD_DEVIATION), '_',...
                     sprintf('%d',ACCUMULATION_PERIOD), ...
                     'h/thresh',num2str(FEATURE_THRESHOLD_VALUE),'/objects'];
+
 
 %%
 %% Set the east propagation identification criteria here.
@@ -39,7 +44,7 @@ OBJECTS_DATA_DIR = ['../../data/',CASE_LABEL,'/processed/',...
 max_n_splitting_times = 999 ; % Max splitting times to recombine.
 n_splitting_times_collect = [];
 
-for year1 = [2017] %1998:2017  ;
+for year1 = [2011] %1998:2017  ;
 
     year2=year1+1 ;
 
@@ -52,9 +57,9 @@ for year1 = [2017] %1998:2017  ;
 
 
     %% Read LP Objects
-    dir0 = dir([OBJECTS_DATA_DIR,'/objects_',num2str(year1),'*.mat']);
-    disp([OBJECTS_DATA_DIR,'/', dir0(1).name])
-    OBJECTS = load([OBJECTS_DATA_DIR,'/', dir0(1).name]) ;
+    %dir0 = dir([OBJECTS_DATA_DIR,'/objects_',num2str(year1),'*.mat']);
+    %disp([OBJECTS_DATA_DIR,'/', dir0(1).name])
+    %OBJECTS = load([OBJECTS_DATA_DIR,'/', dir0(1).name]) ;
 
     
     %% Read LPT systems
@@ -79,14 +84,14 @@ for year1 = [2017] %1998:2017  ;
     lptid_this_year = clumps(clump_idx_this_year, 2)';
     clump_num_this_year = clumps(clump_idx_this_year, 3)';
     
-    %for this_clump_num = [4] %[unique(clump_num_this_year)]
+    %for this_clump_num = [3] %[unique(clump_num_this_year)]
     for this_clump_num = [unique(clump_num_this_year)]
 
       disp(['----------- Clump #', num2str(this_clump_num), ' -----------'])
       
       lptid_for_this_clump = lptid_this_year(clump_num_this_year == this_clump_num);
 
-     if (numel(lptid_for_this_clump) < 1)
+      if (numel(lptid_for_this_clump) < 1)
         continue
       end
 
@@ -113,6 +118,14 @@ for year1 = [2017] %1998:2017  ;
           disp([num2str(ii), ' of ', num2str(numel(G.TIMECLUSTERS))])
 	
           GG=G.TIMECLUSTERS(ii) ;	
+
+	  %GGtimes=[GG.obj.time];
+	  GGobjid=[GG.objid];
+	  GGtimes = [];
+	  for id = 1:numel(GGobjid)
+	    OBJ = load_obj_data(OBJECTS_DATA_DIR, GGobjid(id));
+	    GGtimes = [GGtimes, OBJ.time];
+	  end
 	  
 	  %%
 	  %% Search for combos of tracks that have everything
@@ -126,24 +139,54 @@ for year1 = [2017] %1998:2017  ;
 	  other_lptids_in_this_clump = sort(setxor(lptid_for_this_clump, [ii]));
 	  
 	  for jj = [other_lptids_in_this_clump]
-
+	    
 	    HH=G.TIMECLUSTERS(jj) ;
 	    
-	    if (numel(HH.ceid) < 1)
+	    if (numel(HH.objid) < 1)
 	      continue
 	    end
-	    
+
+	    %HHtimes=[HH.obj.time];
+	    %HHobjid=[HH.obj.objid];
+	    HHobjid=[HH.objid];
+	    HHtimes = [];
+	    for id = 1:numel(HHobjid)
+	      OBJ = load_obj_data(OBJECTS_DATA_DIR, HHobjid(id));
+	      HHtimes = [HHtimes, OBJ.time];
+	    end
+
 	    %% To be a candidate for recombining, the following must apply:
 	    %% 1. The have a time period of splitting.
 	    %% 2. The splitting period is bounded by the intersecting time period.
 	    
-	    intersections = intersect([GG.ceid], [HH.ceid]);
-	    splitting_obj_ids = setxor([GG.ceid], [HH.ceid]);
-	    %splitting_obj_ids = setxor([intersections], [HH.ceid]);
+	    intersections = intersect([GG.objid], [HH.objid]);
+	    splitting_obj_ids = setxor([GG.objid], [HH.objid]);
 
-	    intersection_times = OBJECTS.time(intersections);
-	    splitting_times = OBJECTS.time(splitting_obj_ids);
+	    intersection_times = [];
+	    for this_objid = [intersections]
+	      intersection_times = [intersection_times, HHtimes(HHobjid == this_objid)];
+	    end
 
+	    if (numel(intersections) ~= numel(intersection_times))
+	      disp([numel(intersections),numel(intersection_times)])
+	      disp('WARNING: intersection times.')
+	    end
+
+
+	    splitting_times = [];
+	    for this_objid = [splitting_obj_ids]
+	      if sum(GGobjid == this_objid) > 0
+		splitting_times = [splitting_times, GGtimes(GGobjid == this_objid)];
+	      else
+		splitting_times = [splitting_times, HHtimes(HHobjid == this_objid)];
+	      end
+	    end
+
+	    if (numel(splitting_obj_ids) ~= numel(splitting_times))
+	      disp([numel(splitting_obj_ids),numel(splitting_times)])
+	      disp('WARNING: splitting times.')
+	    end
+	    
 	    %% In some cases with multiple iterations, a time can be both a splitting
 	    %% and an intersecting time. Still consider these times for LPT branch merger.
 	    if (numel(splitting_times) < 1 | numel(intersection_times) < 1)
@@ -165,11 +208,13 @@ for year1 = [2017] %1998:2017  ;
 	    
 	    	    
 	    split_and_merge_times = splitting_times(splitting_times > min(intersection_times) & splitting_times < max(intersection_times));
-
+	    
 	    split_and_merge_ids = [];
 	    for tttt = split_and_merge_times
-	      split_and_merge_ids = [split_and_merge_ids, intersect([GG.ceid],[find(OBJECTS.time == tttt)])];
-	      split_and_merge_ids = [split_and_merge_ids, intersect([HH.ceid],[find(OBJECTS.time == tttt)])];
+%split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],[find(OBJECTS.time == tttt)])];
+	      split_and_merge_ids = [split_and_merge_ids, GGobjid(GGtimes == tttt)];
+%split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],[find(OBJECTS.time == tttt)])];
+	      split_and_merge_ids = [split_and_merge_ids, HHobjid(HHtimes == tttt)];
 	    end
 	    split_and_merge_ids = unique(split_and_merge_ids);
 	    
@@ -184,13 +229,12 @@ for year1 = [2017] %1998:2017  ;
 	    
 		
 	    for jjjj = [other_lptids_in_this_clump]
-	      if ( numel(intersect([G.TIMECLUSTERS(jjjj).ceid], [split_and_merge_ids])) > 0)
+	      if ( numel(intersect([G.TIMECLUSTERS(jjjj).objid], [split_and_merge_ids])) > 0)
 		more_to_do = 1; % Assume there will be more cases, and trigger the loop again.
-		G.TIMECLUSTERS(ii).ceid = unique([G.TIMECLUSTERS(ii).ceid, split_and_merge_ids]);
-		G.TIMECLUSTERS(jjjj).ceid = unique([G.TIMECLUSTERS(jjjj).ceid, split_and_merge_ids]);
+		G.TIMECLUSTERS(ii).objid = unique([G.TIMECLUSTERS(ii).objid, split_and_merge_ids]);
+		G.TIMECLUSTERS(jjjj).objid = unique([G.TIMECLUSTERS(jjjj).objid, split_and_merge_ids]);
 	      end
 	    end
-		
 	    
 	    if more_to_do == 1
 	      disp('Starting a new iteration.')
@@ -214,7 +258,7 @@ for year1 = [2017] %1998:2017  ;
 	end
       end
 
-      G.TIMECLUSTERS = calc_tracking_parameters(G.TIMECLUSTERS, OBJECTS);
+      %G.TIMECLUSTERS = calc_tracking_parameters(G.TIMECLUSTERS, OBJECTS_DATA_DIR);
 
       if do_plotting
 	subplot(1,2,2);	  
@@ -232,16 +276,16 @@ for year1 = [2017] %1998:2017  ;
     
     %% Take out duplicates.
     Gnew.TIMECLUSTERS = eliminate_overlapping_tracks(G.TIMECLUSTERS, 1) ;
-    Gnew.TIMECLUSTERS = eliminate_duplicate_tracks(Gnew.TIMECLUSTERS, 1) ;
-
+    Gnew.TIMECLUSTERS = put_tracks_in_order(Gnew.TIMECLUSTERS, 1);
+    
     %% Recalculate the tracking parameters.
     disp('Updating tracking parameters....')
-    Gnew.TIMECLUSTERS = calc_tracking_parameters(Gnew.TIMECLUSTERS, OBJECTS);
+    Gnew.TIMECLUSTERS = calc_tracking_parameters(Gnew.TIMECLUSTERS, OBJECTS_DATA_DIR);
 
     %% Output
     fn_out_base = [fn_in(1:end-4), '.rejoin'];    
-    lpt_systems_output_netcdf(Gnew.TIMECLUSTERS, OBJECTS, [fn_out_base,'.nc'], OPT);
+    lpt_systems_output_netcdf(Gnew.TIMECLUSTERS, [fn_out_base,'.nc'], OPT);
     lpt_systems_output_ascii(Gnew.TIMECLUSTERS, [fn_out_base,'.txt']);
-    lpt_systems_output_mat(Gnew.TIMECLUSTERS, OBJECTS, [fn_out_base,'.mat']);
+    lpt_systems_output_mat(Gnew.TIMECLUSTERS, [fn_out_base,'.mat']);
 
 end

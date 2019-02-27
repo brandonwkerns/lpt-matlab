@@ -8,8 +8,12 @@ import datetime as dt
 
 #months_to_keep = [12,1,2]
 #season_label = "djf"
-months_to_keep = [6,7,8]
-season_label = "jja"
+#months_to_keep = [6,7,8]
+#season_label = "jja"
+months_to_keep = [10,11,12,1,2,3]
+season_label = "ondjfm"
+#months_to_keep = [4,5,6,7,8,9]
+#season_label = "amjjas"
 
 ##########################################################
 
@@ -121,7 +125,7 @@ for fn in sorted(glob.glob(dir+'/TIMECLUSTERS_*.rejoin2.nc')):
 
             ## grey track in background.
             x, y = map(lon_this, lat_this)            
-            h00 = map.plot(x,y,zorder=2, color=[0.5, 0.5, 0.5], linewidth=0.7)
+            #h00 = map.plot(x,y,zorder=2, color=[0.5, 0.5, 0.5], linewidth=0.7)
 
             
             if np.logical_and(mjo['year'] == year, mjo['idx'] == idx).any():
@@ -133,15 +137,16 @@ for fn in sorted(glob.glob(dir+'/TIMECLUSTERS_*.rejoin2.nc')):
                 
                 x, y = map(lon_this[idx11:idx22], lat_this[idx11:idx22])
                 
-                h0 = map.plot(x, y, color='yellowgreen', zorder=5, linewidth=0.7)
+                h0 = map.plot(x, y, color='forestgreen', zorder=5, linewidth=0.7)
                 h1 = map.plot(x[0], y[0], 'ko', markersize=2, zorder=1000)
-                h2 = map.plot(x[-1], y[-1], 'rx', markersize=5, zorder=1000, markeredgewidth=1.5)
+                h2 = map.plot(x[-1], y[-1], 'x', color='red', markersize=5, zorder=1000, markeredgewidth=1.5)
             
     print(mjo_count)
     grand_total_count += mjo_count
 
 
-leg = plt.legend((h00[0], h0[0], h1[0], h2[0],),('LPT','MJO LPT', 'MJO Start','MJO End',), loc=(0.0, 1.02),fancybox=True, fontsize=10, labelspacing=0.1)
+#leg = plt.legend((h00[0], h0[0], h1[0], h2[0],),('LPT','MJO LPT', 'MJO Start','MJO End',), loc=(0.0, 1.02),fancybox=True, fontsize=10, labelspacing=0.1)
+leg = plt.legend((h0[0], h1[0], h2[0],),('MJO LPT', 'MJO Start','MJO End',), loc=(0.0, 1.02),fancybox=True, fontsize=10, labelspacing=0.1)
 
 plt.title('MJO LPT System Tracks: 1998 - 2018 ('+season_label.upper()+')\n' +"(N = " + str(grand_total_count) + " MJO, green; LPTs, gray)" )
 
