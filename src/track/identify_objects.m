@@ -54,10 +54,9 @@ DD9 = sprintf('%02d', day9);
 HH9 = sprintf('%02d', hour9);
 
 ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
-%allPixelList=[PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9,'.mat'] ;
-%netcdf_output_fn = [PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9,'.nc'] ;
 
 %% Start the "master" ascii file. (It is mainly for diagnostics and quick look).
+mkdir(PROCESSED_DATA_DIR_OUT);
 fid=fopen([PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9],'w') ;
 
 
