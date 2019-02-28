@@ -22,7 +22,7 @@ fid_clumps_of_worms=fopen([PROCESSED_DATA_DIR,'/clumps_of_worms.rejoin.txt'],'w'
 
 fprintf(fid_clumps_of_worms, '%s\n', header);
 
-for year1 = 1998:2017  ;
+for year1 = 1998:2018  ;
 
   year2=year1+1 ;
 

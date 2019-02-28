@@ -37,7 +37,7 @@ clumps = dlmread(clumps_file,'',1,0);
 max_n_splitting_times = 999 ; % Max splitting times to recombine.
 n_splitting_times_collect = [];
 
-for year1 = [2006] %1998:2017  ;
+for year1 = [2018] %1998:2017  ;
 
     year2=year1+1 ;
 
