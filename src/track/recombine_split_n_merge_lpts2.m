@@ -651,8 +651,6 @@ for year1 = [1998] %1998:2017  ;
 	    
 	    split_and_merge_ids = [];
 	    for tttt = split_and_merge_times
-	      %split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],[find(OBJECTS.time == tttt)])];
-	      %split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],[find(OBJECTS.time == tttt)])];
 
 	      split_and_merge_ids = [split_and_merge_ids, intersect([GG.objid],union_ids(union_times == tttt))];
 	      split_and_merge_ids = [split_and_merge_ids, intersect([HH.objid],union_ids(union_times == tttt))];
@@ -739,6 +737,6 @@ for year1 = [1998] %1998:2017  ;
     fn_out_base = [fn_in(1:end-4), '2'];    
     lpt_systems_output_netcdf(Gnew.TIMECLUSTERS, [fn_out_base,'.nc'], OPT);
     lpt_systems_output_ascii(Gnew.TIMECLUSTERS, [fn_out_base,'.txt']);
-    lpt_systems_output_mat(Gnew.TIMECLUSTERS, OBJECTS_DATA_DIR, [fn_out_base,'.mat']);
+    lpt_systems_output_mat(Gnew.TIMECLUSTERS, [fn_out_base,'.mat']);
 
 end
