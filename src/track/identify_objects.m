@@ -54,10 +54,34 @@ DD9 = sprintf('%02d', day9);
 HH9 = sprintf('%02d', hour9);
 
 ymd0_ymd9 = [YYYY0,MM0,DD0,HH0,'_',YYYY9,MM9,DD9,HH9];
+allPixelList=[PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9,'.mat'] ; % Yearly objects file with pixels info.
 
 %% Start the "master" ascii file. (It is mainly for diagnostics and quick look).
 mkdir(PROCESSED_DATA_DIR_OUT);
 fid=fopen([PROCESSED_DATA_DIR_OUT,'/objects_',ymd0_ymd9],'w') ;
+
+
+% Initialize the master output struct, which will contain the
+% index for all of the LP Objects in the same order
+% as the ascii file opened as "fid" above, with pixel info. It will go in the
+% matlab .mat file in "allPixelList."
+fout_all.time_range=[dn0,dn9];
+fout_all.id=[] ;
+fout_all.time=[] ;
+fout_all.lon=[] ;
+fout_all.lat=[] ;
+fout_all.area=[] ;
+fout_all.volrain=[] ;
+fout_all.pixels=[] ;
+fout_all.max_filtered_rain=[] ;
+fout_all.lon_max=[] ;
+fout_all.lat_max=[] ;
+fout_all.lon_rain_weighted=[] ;
+fout_all.lat_rain_weighted=[] ;
+fout_all.lon_median=[] ;
+fout_all.lat_median=[] ;
+INDX_ALL = 0;
+
 
 
 % Now loop over the times updating the individual time structs as needed.
@@ -201,7 +225,7 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
             RAINFILTER_BW_keep(CC1.PixelIdxList{iii})=0;
         else
             INDX=INDX+1 ;
-            %INDX_ALL=INDX_ALL+1 ;
+            INDX_ALL=INDX_ALL+1 ;
 
             % Define the single day output struct.
             fout.id(INDX)=year*1e10 + month*1e8 + day*1e6 + hour*1e4 + INDX ;
@@ -248,9 +272,47 @@ for dn = DN1:datenum(0,0,0,DT,0,0):DN2
     disp(thisPixelList)
     eval(['save ',thisPixelList,' -struct fout'])
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% Update the "grand index" struct.
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    fout_all.id=[fout_all.id,fout.id] ;
+    fout_all.time=[fout_all.time,fout.time] ;
+    fout_all.lon=[fout_all.lon,fout.lon] ;
+    fout_all.lat=[fout_all.lat,fout.lat] ;
+    fout_all.area=[fout_all.area,fout.area] ;
+    fout_all.volrain=[fout_all.volrain,fout.volrain] ;
+    fout_all.max_filtered_rain=[fout_all.max_filtered_rain, ...
+                        fout.max_filtered_rain] ;
+    fout_all.lon_max=[fout_all.lon_max,fout.lon_max] ;
+    fout_all.lat_max=[fout_all.lat_max,fout.lat_max] ;
+
+    fout_all.pixels=[fout_all.pixels,fout.pixels] ;
+    fout_all.lon_rain_weighted=[fout_all.lon_rain_weighted,...
+                        fout.lon_rain_weighted] ;
+    fout_all.lat_rain_weighted=[fout_all.lat_rain_weighted,...
+                        fout.lat_rain_weighted] ;
+
+    fout_all.lon_median=[fout_all.lon_median,fout.lon_median] ;
+    fout_all.lat_median=[fout_all.lat_median,fout.lat_median] ;
+
+    
+
+
+    
 end
 
 %% Close the "master" ascii file. (It is mainly for diagnostics and quick look).
 fclose(fid) ;
+
+
+disp('Output master .mat file with pixel info.')
+fout_all.grid.lon = F.lon;
+fout_all.grid.lat = F.lat;
+fout_all.grid.area=AREA ;
+
+disp(allPixelList)
+eval(['save ',allPixelList,' -struct fout_all'])
+
+
 
 disp('Done.')
