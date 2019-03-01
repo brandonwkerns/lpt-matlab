@@ -39,7 +39,7 @@ min_time_to_maintain_split = 3.0; % days
 max_n_splitting_times = 999 ; % Max splitting times to recombine.
 n_splitting_times_collect = [];
 
-for year1 = [1998] %1998:2017  ;
+for year1 = 1998:2018  ;
 
     year2=year1+1 ;
 
