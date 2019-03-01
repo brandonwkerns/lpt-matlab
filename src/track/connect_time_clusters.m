@@ -93,15 +93,15 @@ for dn=[DN]
   %% Load Objects for this time.
   OBJ = load([PROCESSED_DATA_DIR_IN, '/', YYYY, '/', MM, '/objects_', YYYY,MM,DD,HH,'.mat']);
   
-  objINDXthisTime=find(OBJ.time == dn) ;
+  objINDXthisTime=find(OBJ.time > dn - datenum(0,0,0,0,1,0) & OBJ.time < dn + datenum(0,0,0,0,1,0)) ;
   if ( numel(objINDXthisTime) < 1 )
     continue
   end
 
   if (numel(allDates) > 0.1)
 
-    prevDates = allDates(allDates > dn - 0.01 - OPT.DT/24.0 & ...
-                         allDates < dn-0.01 ) ;
+    prevDates = allDates(allDates > dn - datenum(0,0,0,0,1,0) - OPT.DT/24.0 & ...
+                         allDates < dn - datenum(0,0,0,0,1,0) ) ;
 
   else
     prevDates = -999.0;
