@@ -17,7 +17,7 @@ function lpt_system_mask_output_netcdf(netcdf_output_fn, mask_arrays)
 
   
   varid_lpt_mask_by_id  = netcdf.defVar(ncid, 'mask_by_lpt_system_id', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
-  varid_lpt_mask_by_ceid  = netcdf.defVar(ncid, 'mask_by_lp_object_id', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
+  varid_lpt_mask_by_objid  = netcdf.defVar(ncid, 'mask_by_lp_object_id', 'NC_INT64', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
 
   varid_lpt_mask_by_id_with_accumulation  = netcdf.defVar(ncid, 'mask_with_accumulation', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
   varid_lpt_mask_by_id_with_filter  = netcdf.defVar(ncid, 'mask_with_filter', 'NC_INT', [dimid_lon_grid, dimid_lat_grid, dimid_alltime]);
@@ -25,7 +25,7 @@ function lpt_system_mask_output_netcdf(netcdf_output_fn, mask_arrays)
 
   
   netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id,true,true,1);
-  netcdf.defVarDeflate(ncid,varid_lpt_mask_by_ceid,true,true,1);
+  netcdf.defVarDeflate(ncid,varid_lpt_mask_by_objid,true,true,1);
   netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter,true,true,1);
   netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_accumulation,true,true,1);
   netcdf.defVarDeflate(ncid,varid_lpt_mask_by_id_with_filter_and_accumulation,true,true,1);
@@ -41,7 +41,7 @@ function lpt_system_mask_output_netcdf(netcdf_output_fn, mask_arrays)
 
   netcdf.putVar(ncid, varid_lpt_mask_by_id, ...
 		permute(mask_arrays.mask_by_lptid, [3,2,1]));
-  netcdf.putVar(ncid, varid_lpt_mask_by_ceid, ...
+  netcdf.putVar(ncid, varid_lpt_mask_by_objid, ...
 		permute(mask_arrays.mask_by_objid, [3,2,1]));
   
   netcdf.putVar(ncid, varid_lpt_mask_by_id_with_accumulation, ...
